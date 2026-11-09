@@ -1,9 +1,16 @@
+using ClaimsApi.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddProblemDetails();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("ClaimsDb"))
+);
 
 var app = builder.Build();
 
@@ -16,7 +23,6 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
     });
-
 }
 
 app.UseHttpsRedirection();
