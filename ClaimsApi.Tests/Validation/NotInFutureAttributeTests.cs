@@ -1,12 +1,19 @@
 using ClaimsApi.Validation;
+using Microsoft.Extensions.Time.Testing;
 using Xunit.Abstractions;
 
 namespace ClaimsApi.Tests.Validation;
 
 public class NotInFutureAttributeTests(ITestOutputHelper output)
 {
-    private readonly NotInFutureAttribute _attribute = new();
-    private readonly DateOnly _today = DateOnly.FromDateTime(DateTime.UtcNow);
+    private static readonly DateTimeOffset Now = new(2026, 11, 10, 12, 0, 0, TimeSpan.Zero);
+
+    private readonly NotInFutureAttribute _attribute = new()
+    {
+        TimeProvider = new FakeTimeProvider(Now),
+    };
+
+    private readonly DateOnly _today = DateOnly.FromDateTime(Now.UtcDateTime);
 
     [Fact]
     public void Tomorrow_IsInvalid()
