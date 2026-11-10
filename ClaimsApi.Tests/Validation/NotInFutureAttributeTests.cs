@@ -1,10 +1,9 @@
 using ClaimsApi.Validation;
 using Microsoft.Extensions.Time.Testing;
-using Xunit.Abstractions;
 
 namespace ClaimsApi.Tests.Validation;
 
-public class NotInFutureAttributeTests(ITestOutputHelper output)
+public class NotInFutureAttributeTests()
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 10, 12, 0, 0, TimeSpan.Zero);
 
@@ -15,14 +14,14 @@ public class NotInFutureAttributeTests(ITestOutputHelper output)
 
     private readonly DateOnly _today = DateOnly.FromDateTime(Now.UtcDateTime);
 
-    [Fact]
-    public void Tomorrow_IsInvalid()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Tomorrow_IsInvalid(int daysAhead)
     {
-        var tomorrow = _today.AddDays(1);
+        var future = _today.AddDays(daysAhead);
 
-        var result = _attribute.IsValid(tomorrow);
-
-        output.WriteLine($"tomorrow: {tomorrow}, result: {result}");
+        var result = _attribute.IsValid(future);
 
         Assert.False(result);
     }
@@ -33,8 +32,6 @@ public class NotInFutureAttributeTests(ITestOutputHelper output)
         var yesterday = _today.AddDays(-1);
 
         var result = _attribute.IsValid(yesterday);
-
-        output.WriteLine($"yesterday: {yesterday}, result: {result}");
 
         Assert.True(result);
     }
