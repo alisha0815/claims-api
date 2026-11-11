@@ -23,7 +23,11 @@ builder.Services.AddScoped<IClaimService, ClaimService>();
 
 builder.Services.AddSingleton(TimeProvider.System);
 
+builder.Services.AddControllers();
+
 var app = builder.Build();
+
+app.MapControllers();
 
 app.UseExceptionHandler();
 
