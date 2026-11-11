@@ -12,5 +12,5 @@ public record ClaimResponse(
     DateOnly IncidentDate,
     ClaimStatus Status,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime? UpdatedAt
 );
