@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using ClaimsApi.Data;
+using ClaimsApi.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,10 @@ builder.Services.AddProblemDetails();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("ClaimsDb"))
 );
+
+builder.Services.AddScoped<IClaimService, ClaimService>();
+
+builder.Services.AddSingleton(TimeProvider.System);
 
 var app = builder.Build();
 
