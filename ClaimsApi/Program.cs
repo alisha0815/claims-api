@@ -23,15 +23,7 @@ builder.Services.AddScoped<IClaimService, ClaimService>();
 
 builder.Services.AddSingleton(TimeProvider.System);
 
-builder
-    .Services.AddControllers()
-    .AddJsonOptions(options =>
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
-    );
-
 var app = builder.Build();
-
-app.MapControllers();
 
 app.UseExceptionHandler();
 
