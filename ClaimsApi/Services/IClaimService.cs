@@ -9,4 +9,6 @@ public interface IClaimService
         CreateClaimRequest request,
         CancellationToken cancellationToken = default
     );
+
+    Task<ClaimResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 }
