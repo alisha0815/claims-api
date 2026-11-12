@@ -1,3 +1,26 @@
-@ClaimsApi_HostAddress = http://localhost:5175
+@baseUrl = http://localhost:5175
 
-###
+### Create claim - success (201)
+POST {{baseUrl}}/api/claims 
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-118734",
+  "title": "Suitcase wheels broken on arrival",
+  "description": "Damaged on OSL–ICN flight",
+  "amount": 2500,
+  "incidentDate": "2026-11-02"
+}
+
+
+### Create claim - validation error (400)
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-118734",
+  "title": "Invalid claim example",
+  "description": "Amount is zero and incident date is in the future",
+  "amount": 0,
+  "incidentDate": "2030-01-01"
+}
