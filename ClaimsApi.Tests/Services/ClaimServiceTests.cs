@@ -23,6 +23,8 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
             IncidentDate: new DateOnly(2026, 11, 3)
         );
 
+    // CreateAsync
+
     [Fact]
     public async Task CreateAsync_ValidRequest_SetsStatusToReceived()
     {
@@ -65,5 +67,26 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Assert
         Assert.Equal(customerId, response.CustomerId);
+    }
+
+    // GetByIdAsync
+    [Fact]
+    public async Task GetByIdAsync_ExistingId_ReturnsClaim()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateService(arrangeDb);
+
+        var created = await arrangeService.CreateAsync(42, ValidRequest());
+
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        // Act
+        var result = await actService.GetByIdAsync(created.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(created, result);
     }
 }

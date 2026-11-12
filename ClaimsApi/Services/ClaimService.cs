@@ -37,7 +37,10 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
         return claim.ToResponse();
     }
 
-    public async Task<ClaimResponse?> GetByIdAsync(int id, CancellationToken cancellationToken)
+    public async Task<ClaimResponse?> GetByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default
+    )
     {
         var claim = await db
             .Claims.AsNoTracking()
