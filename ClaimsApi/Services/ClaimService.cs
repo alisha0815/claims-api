@@ -2,6 +2,7 @@ using ClaimsApi.Data;
 using ClaimsApi.Dtos;
 using ClaimsApi.Mappings;
 using ClaimsApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClaimsApi.Services;
 
@@ -34,5 +35,17 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
         await db.SaveChangesAsync(cancellationToken);
 
         return claim.ToResponse();
+    }
+
+    public async Task<ClaimResponse?> GetByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var claim = await db
+            .Claims.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        return claim?.ToResponse();
     }
 }

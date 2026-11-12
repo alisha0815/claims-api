@@ -1,13 +1,15 @@
 @baseUrl = http://localhost:5175
+@nonExistentId = 999999
 
 ### Create claim - success (201)
-POST {{baseUrl}}/api/claims 
+# @name createClaim
+POST {{baseUrl}}/api/claims
 Content-Type: application/json
 
 {
   "policyNumber": "TRV-2026-118734",
   "title": "Suitcase wheels broken on arrival",
-  "description": "Damaged on OSL–ICN flight",
+  "description": "Damaged on OSLO-ICN flight",
   "amount": 2500,
   "incidentDate": "2026-11-02"
 }
@@ -24,3 +26,9 @@ Content-Type: application/json
   "amount": 0,
   "incidentDate": "2030-01-01"
 }
+
+### Get claim by Id - success (200)
+GET {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+
+### Get claim by Id - not found error (404)
+GET {{baseUrl}}/api/claims/{{nonExistentId}}
