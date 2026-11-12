@@ -89,4 +89,19 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         Assert.NotNull(result);
         Assert.Equal(created, result);
     }
+
+    [Fact]
+    public async Task GetByIdAsync_NonExistingId_ReturnsNull()
+    {
+        // Arrange
+        await using var db = fixture.CreateDbContext();
+        var service = CreateService(db);
+        const int nonExistentId = int.MaxValue;
+
+        // Act
+        var result = await service.GetByIdAsync(nonExistentId);
+
+        // Assert
+        Assert.Null(result);
+    }
 }
