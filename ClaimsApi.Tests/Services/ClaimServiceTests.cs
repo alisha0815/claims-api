@@ -15,7 +15,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         new(db, new FakeTimeProvider(_fixedTime));
 
     private static CreateClaimRequest ValidRequest() =>
-        new CreateClaimRequest(
+        new(
             PolicyNumber: "POL-2026-00123",
             Title: "Water damage in kitchen",
             Description: "A pipe under the sink burst overnight and damaged the floor and cabinets.",
@@ -50,5 +50,20 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         // Assert
         Assert.Equal(_fixedTime.UtcDateTime, response.CreatedAt);
         Assert.Equal(_fixedTime.UtcDateTime, response.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ValidRequest_UsesGivenCustomerId()
+    {
+        // Arrange
+        await using var db = fixture.CreateDbContext();
+        var service = CreateService(db);
+        const int customerId = 42;
+
+        // Act
+        var response = await service.CreateAsync(customerId, ValidRequest());
+
+        // Assert
+        Assert.Equal(customerId, response.CustomerId);
     }
 }
