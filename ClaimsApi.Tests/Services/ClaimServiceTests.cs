@@ -36,4 +36,19 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         // Assert
         Assert.Equal(ClaimStatus.Received, response.Status);
     }
+
+    [Fact]
+    public async Task CreateAsync_ValidRequest_SetsTimestampsToCurrentTime()
+    {
+        // Arrange
+        await using var db = fixture.CreateDbContext();
+        var service = CreateService(db);
+
+        // Act
+        var response = await service.CreateAsync(42, ValidRequest());
+
+        // Assert
+        Assert.Equal(_fixedTime.UtcDateTime, response.CreatedAt);
+        Assert.Equal(_fixedTime.UtcDateTime, response.UpdatedAt);
+    }
 }
