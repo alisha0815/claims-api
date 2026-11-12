@@ -23,4 +23,22 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
 
         return Created($"/api/claims/{claimResponse.Id}", claimResponse);
     }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ClaimResponse>> GetById(
+        int id,
+        CancellationToken cancellationToken
+    )
+    {
+        var claimResponse = await claimService.GetByIdAsync(id, cancellationToken);
+
+        if (claimResponse is null)
+        {
+            return NotFound();
+        }
+
+        return claimResponse;
+    }
 }
