@@ -5,6 +5,7 @@ using ClaimsApi.Services;
 using ClaimsApi.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
+using Org.BouncyCastle.Crypto.Paddings;
 
 namespace ClaimsApi.Tests.Services;
 
@@ -176,5 +177,33 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         // Assert
         var claim = Assert.Single(result);
         Assert.Equal(toApprove.Id, claim.Id);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_NoFilter_ReturnsClaimsOfAllStatuses()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        await arrangeDb.Claims.ExecuteDeleteAsync(); // Empty table
+
+        // Create two claims (both Received)
+        var arrangeService = CreateService(arrangeDb);
+        var received = await arrangeService.CreateAsync(42, ValidRequest());
+        var toApprove = await arrangeService.CreateAsync(42, ValidRequest());
+
+        // Approve one of them
+        await arrangeDb
+            .Claims.Where(c => c.Id == toApprove.Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Status, ClaimStatus.Approved));
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+        var result = await actService.GetAllAsync(status: null);
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, c => c.Id == received.Id);
+        Assert.Contains(result, c => c.Id == toApprove.Id);
     }
 }
