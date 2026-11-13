@@ -41,4 +41,15 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
 
         return claimResponse;
     }
+
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ClaimResponse>>> GetAll(
+        CancellationToken cancellationToken
+    )
+    {
+        var claims = await claimService.GetAllAsync(cancellationToken);
+
+        return Ok(claims);
+    }
 }
