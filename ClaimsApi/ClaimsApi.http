@@ -32,3 +32,6 @@ GET {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
 
 ### Get claim by Id - not found error (404)
 GET {{baseUrl}}/api/claims/{{nonExistentId}}
+
+### Get all claims - success (200)
+GET {{baseUrl}}/api/claims
