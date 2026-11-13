@@ -12,8 +12,8 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 {
     private readonly DateTimeOffset _fixedTime = new(2026, 11, 12, 10, 30, 0, TimeSpan.Zero);
 
-    private ClaimService CreateService(AppDbContext db) =>
-        new(db, new FakeTimeProvider(_fixedTime));
+    private ClaimService CreateService(AppDbContext db, FakeTimeProvider? timeProvider = null) =>
+        new(db, timeProvider ?? new FakeTimeProvider(_fixedTime));
 
     private static CreateClaimRequest ValidRequest() =>
         new(
@@ -120,5 +120,34 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Assert
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_MultipleClaims_ReturnsNewestFirst()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        await arrangeDb.Claims.ExecuteDeleteAsync(); // Empty table
+
+        // Created at 10:30
+        var olderService = CreateService(arrangeDb);
+        var older = await olderService.CreateAsync(42, ValidRequest());
+
+        // Created at 10:31
+        var timeProvider = new FakeTimeProvider(_fixedTime);
+        timeProvider.Advance(TimeSpan.FromMinutes(1));
+
+        var newerService = CreateService(arrangeDb, timeProvider);
+        var newer = await newerService.CreateAsync(42, ValidRequest());
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+        var result = await actService.GetAllAsync();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Equal(newer.Id, result[0].Id);
+        Assert.Equal(older.Id, result[1].Id);
     }
 }
