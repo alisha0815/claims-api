@@ -48,4 +48,18 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
 
         return claim?.ToResponse();
     }
+
+    public async Task<IReadOnlyList<ClaimResponse>> GetAllAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        var claims = await db
+            .Claims.AsNoTracking()
+            .OrderByDescending(c => c.CreatedAt)
+            .ThenByDescending(c => c.Id)
+            .Select(c => c.ToResponse())
+            .ToListAsync(cancellationToken);
+
+        return claims;
+    }
 }
