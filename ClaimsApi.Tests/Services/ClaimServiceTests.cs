@@ -150,4 +150,31 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         Assert.Equal(newer.Id, result[0].Id);
         Assert.Equal(older.Id, result[1].Id);
     }
+
+    [Fact]
+    public async Task GetAllAsync_StatusFilter_ReturnsOnlyMatchingClaims()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        await arrangeDb.Claims.ExecuteDeleteAsync(); // Empty table
+
+        // Create two claims (both Received)
+        var arrangeService = CreateService(arrangeDb);
+        var received = await arrangeService.CreateAsync(42, ValidRequest());
+        var toApprove = await arrangeService.CreateAsync(42, ValidRequest());
+
+        // Approve one of them
+        await arrangeDb
+            .Claims.Where(c => c.Id == toApprove.Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Status, ClaimStatus.Approved));
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+        var result = await actService.GetAllAsync(status: ClaimStatus.Approved);
+
+        // Assert
+        var claim = Assert.Single(result);
+        Assert.Equal(toApprove.Id, claim.Id);
+    }
 }
