@@ -11,4 +11,6 @@ public interface IClaimService
     );
 
     Task<ClaimResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ClaimResponse>> GetAllAsync(CancellationToken cancellationToken = default);
 }
