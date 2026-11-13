@@ -35,3 +35,9 @@ GET {{baseUrl}}/api/claims/{{nonExistentId}}
 
 ### Get all claims - success (200)
 GET {{baseUrl}}/api/claims
+
+### List claims - filter by Approved (200)
+GET {{baseUrl}}/api/claims?status=Approved
+
+### List claims - invalid status (400)
+GET {{baseUrl}}/api/claims?status=Pending
