@@ -50,11 +50,18 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
     }
 
     public async Task<IReadOnlyList<ClaimResponse>> GetAllAsync(
+        ClaimStatus? status = null,
         CancellationToken cancellationToken = default
     )
     {
-        var claims = await db
-            .Claims.AsNoTracking()
+        var query = db.Claims.AsNoTracking();
+
+        if (status is not null)
+        {
+            query = query.Where(c => c.Status == status);
+        }
+
+        var claims = await query
             .OrderByDescending(c => c.CreatedAt)
             .ThenByDescending(c => c.Id)
             .Select(c => c.ToResponse())

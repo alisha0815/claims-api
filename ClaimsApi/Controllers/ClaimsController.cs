@@ -1,4 +1,5 @@
 using ClaimsApi.Dtos;
+using ClaimsApi.Models;
 using ClaimsApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -44,11 +45,13 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<ClaimResponse>>> GetAll(
+        [FromQuery] ClaimStatus? status,
         CancellationToken cancellationToken
     )
     {
-        var claims = await claimService.GetAllAsync(cancellationToken);
+        var claims = await claimService.GetAllAsync(status, cancellationToken);
 
         return Ok(claims);
     }
