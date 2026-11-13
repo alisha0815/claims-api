@@ -3,6 +3,7 @@ using ClaimsApi.Dtos;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
 using ClaimsApi.Tests.Fixtures;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 
 namespace ClaimsApi.Tests.Services;
@@ -103,5 +104,21 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Assert
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_NoClaims_ReturnsEmptyList()
+    {
+        // Arrange
+        await using var db = fixture.CreateDbContext();
+        await db.Claims.ExecuteDeleteAsync();
+
+        var service = CreateService(db);
+
+        // Act
+        var result = await service.GetAllAsync();
+
+        // Assert
+        Assert.Empty(result);
     }
 }
