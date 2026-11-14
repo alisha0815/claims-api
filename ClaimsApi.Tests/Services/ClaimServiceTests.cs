@@ -25,6 +25,14 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
             IncidentDate: new DateOnly(2026, 11, 3)
         );
 
+    private static UpdateClaimRequest ValidUpdateRequest() =>
+        new(
+            Title: "Water damage in kitchen and hallway",
+            IncidentDate: new DateOnly(2026, 11, 2),
+            Amount: 18000.75m,
+            Description: "The leak also spread to the hallway floor."
+        );
+
     // CreateAsync
 
     [Fact]
@@ -205,5 +213,87 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         Assert.Equal(2, result.Count);
         Assert.Contains(result, c => c.Id == received.Id);
         Assert.Contains(result, c => c.Id == toApprove.Id);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReceivedClaim_UpdatesFields()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create one claim (Received)
+        var arrangeService = CreateService(arrangeDb);
+        var received = await arrangeService.CreateAsync(42, ValidRequest());
+
+        var id = received.Id;
+        var request = ValidUpdateRequest();
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.UpdateAsync(id, request);
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+        var updated = await CreateService(assertDb).GetByIdAsync(id);
+
+        Assert.Equal(UpdateClaimResult.Updated, result);
+        Assert.NotNull(updated);
+        Assert.Equal(request.Title, updated.Title);
+        Assert.Equal(request.IncidentDate!.Value, updated.IncidentDate);
+        Assert.Equal(request.Amount, updated.Amount);
+        Assert.Equal(request.Description, updated.Description);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_InReviewClaim_ReturnsNotEditable()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create one claim (Received)
+        var arrangeService = CreateService(arrangeDb);
+        var created = await arrangeService.CreateAsync(42, ValidRequest());
+
+        var id = created.Id;
+        var request = ValidUpdateRequest();
+
+        // Move to InReview
+        await arrangeDb
+            .Claims.Where(c => c.Id == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Status, ClaimStatus.InReview));
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.UpdateAsync(id, request);
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+        var stored = await CreateService(assertDb).GetByIdAsync(id);
+
+        Assert.Equal(UpdateClaimResult.NotEditable, result);
+        Assert.NotNull(stored);
+        Assert.Equal(created.Title, stored.Title);
+        Assert.Equal(ClaimStatus.InReview, stored.Status);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NonExistingId_ReturnsNotFound()
+    {
+        // Arrange
+        await using var db = fixture.CreateDbContext();
+        var service = CreateService(db);
+        const int nonExistentId = int.MaxValue;
+
+        var request = ValidUpdateRequest();
+
+        // Act
+        var result = await service.UpdateAsync(nonExistentId, request);
+
+        // Assert
+        Assert.Equal(UpdateClaimResult.NotFound, result);
     }
 }

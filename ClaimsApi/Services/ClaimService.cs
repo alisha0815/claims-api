@@ -69,4 +69,36 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
 
         return claims;
     }
+
+    public async Task<UpdateClaimResult> UpdateAsync(
+        int id,
+        UpdateClaimRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var claimToUpdate = await db.Claims.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (claimToUpdate is null)
+        {
+            return UpdateClaimResult.NotFound;
+        }
+
+        if (claimToUpdate.Status is not ClaimStatus.Received)
+        {
+            return UpdateClaimResult.NotEditable;
+        }
+
+        // Update
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+
+        claimToUpdate.Title = request.Title;
+        claimToUpdate.IncidentDate = request.IncidentDate!.Value;
+        claimToUpdate.Amount = request.Amount;
+        claimToUpdate.Description = request.Description;
+        claimToUpdate.UpdatedAt = now;
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return UpdateClaimResult.Updated;
+    }
 }

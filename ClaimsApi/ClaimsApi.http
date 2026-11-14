@@ -1,5 +1,6 @@
 @baseUrl = http://localhost:5175
 @nonExistentId = 999999
+@inReviewId = 2
 
 ### Create claim - success (201)
 # @name createClaim
@@ -41,3 +42,49 @@ GET {{baseUrl}}/api/claims?status=Approved
 
 ### List claims - invalid status (400)
 GET {{baseUrl}}/api/claims?status=Pending
+
+# PUT /api/claims/{id} - Update claim
+
+### Update claim - success (204)
+PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "title": "Suitcase wheels and handle broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
+  "amount": 3200,
+  "incidentDate": "2026-11-01"
+}
+
+### Update claim - validation error (400)
+PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "Damaged on OSLO-ICN flight",
+  "amount": 0,
+  "incidentDate": "2030-01-01"
+}
+
+### Update claim - not found (404)
+PUT {{baseUrl}}/api/claims/{{nonExistentId}}
+Content-Type: application/json
+
+{
+  "title": "Suitcase wheels and handle broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
+  "amount": 3200,
+  "incidentDate": "2026-11-01"
+}
+
+### Update claim - not editable (409)
+PUT {{baseUrl}}/api/claims/{{inReviewId}}
+Content-Type: application/json
+
+{
+  "title": "Suitcase wheels and handle broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
+  "amount": 3200,
+  "incidentDate": "2026-11-01"
+}
