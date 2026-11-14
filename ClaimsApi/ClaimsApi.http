@@ -54,3 +54,36 @@ Content-Type: application/json
   "amount": 3200,
   "incidentDate": "2026-11-01"
 }
+
+### Update claim - validation error (400)
+PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "Damaged on OSLO-ICN flight",
+  "amount": 0,
+  "incidentDate": "2030-01-01"
+}
+
+### Update claim - not found (404)
+PUT {{baseUrl}}/api/claims/{{nonExistentId}}
+Content-Type: application/json
+
+{
+  "title": "Suitcase wheels and handle broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
+  "amount": 3200,
+  "incidentDate": "2026-11-01"
+}
+
+### Update claim - not editable (409)
+PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "title": "Suitcase wheels and handle broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
+  "amount": 3200,
+  "incidentDate": "2026-11-01"
+}
