@@ -245,4 +245,38 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         Assert.Equal(request.Amount, updated.Amount);
         Assert.Equal(request.Description, updated.Description);
     }
+
+    [Fact]
+    public async Task UpdateAsync_InReviewClaim_ReturnsNotEditable()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create one claim (Received)
+        var arrangeService = CreateService(arrangeDb);
+        var created = await arrangeService.CreateAsync(42, ValidRequest());
+
+        var id = created.Id;
+        var request = ValidUpdateRequest();
+
+        // Move to InReview
+        await arrangeDb
+            .Claims.Where(c => c.Id == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Status, ClaimStatus.InReview));
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.UpdateAsync(id, request);
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+        var stored = await CreateService(assertDb).GetByIdAsync(id);
+
+        Assert.Equal(UpdateClaimResult.NotEditable, result);
+        Assert.NotNull(stored);
+        Assert.Equal(created.Title, stored.Title);
+        Assert.Equal(ClaimStatus.InReview, stored.Status);
+    }
 }
