@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ClaimsApi.Dtos;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
@@ -54,5 +55,30 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         var claims = await claimService.GetAllAsync(status, cancellationToken);
 
         return Ok(claims);
+    }
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult> UpdateById(
+        int id,
+        UpdateClaimRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await claimService.UpdateAsync(id, request, cancellationToken);
+
+        return result switch
+        {
+            UpdateClaimResult.Updated => NoContent(),
+            UpdateClaimResult.NotFound => NotFound(),
+            UpdateClaimResult.NotEditable => Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                detail: "Only claims in Received status can be updated."
+            ),
+            _ => throw new UnreachableException(),
+        };
     }
 }
