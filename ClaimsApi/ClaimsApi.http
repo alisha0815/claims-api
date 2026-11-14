@@ -1,5 +1,6 @@
 @baseUrl = http://localhost:5175
 @nonExistentId = 999999
+@inReviewId = 2
 
 ### Create claim - success (201)
 # @name createClaim
@@ -78,7 +79,7 @@ Content-Type: application/json
 }
 
 ### Update claim - not editable (409)
-PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+PUT {{baseUrl}}/api/claims/{{inReviewId}}
 Content-Type: application/json
 
 {
