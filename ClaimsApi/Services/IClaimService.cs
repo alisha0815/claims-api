@@ -17,4 +17,10 @@ public interface IClaimService
         ClaimStatus? status = null,
         CancellationToken cancellationToken = default
     );
+
+    Task<UpdateClaimResult> UpdateAsync(
+        int id,
+        UpdateClaimRequest request,
+        CancellationToken cancellationToken = default
+    );
 }
