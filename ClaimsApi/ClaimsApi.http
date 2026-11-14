@@ -41,3 +41,16 @@ GET {{baseUrl}}/api/claims?status=Approved
 
 ### List claims - invalid status (400)
 GET {{baseUrl}}/api/claims?status=Pending
+
+# PUT /api/claims/{id} - Update claim
+
+### Update claim - success (204)
+PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "title": "Suitcase wheels and handle broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
+  "amount": 3200,
+  "incidentDate": "2026-11-01"
+}
