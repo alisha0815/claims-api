@@ -7,5 +7,5 @@ public record UpdateClaimRequest(
     [Required, MaxLength(100)] string Title,
     [Required, NotInFuture] DateOnly? IncidentDate,
     [Range(0, double.MaxValue, MinimumIsExclusive = true)] decimal Amount,
-    string? Description
+    [MaxLength(2000)] string? Description
 );
