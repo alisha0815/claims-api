@@ -296,4 +296,31 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         // Assert
         Assert.Equal(UpdateClaimResult.NotFound, result);
     }
+
+    [Fact]
+    public async Task DeleteAsync_ReceivedClaim_DeletesClaim()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateService(arrangeDb);
+
+        var created = await arrangeService.CreateAsync(42, ValidRequest());
+
+        var idToDelete = created.Id;
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.DeleteAsync(idToDelete);
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+        var assertService = CreateService(assertDb);
+
+        var stored = await assertService.GetByIdAsync(idToDelete);
+
+        Assert.Equal(DeleteClaimResult.Deleted, result);
+        Assert.Null(stored);
+    }
 }
