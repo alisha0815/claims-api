@@ -23,14 +23,11 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+app.MapOpenApi();
+app.UseSwaggerUI(options =>
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
-    });
-}
+    options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
+});
 
 app.UseHttpsRedirection();
 
