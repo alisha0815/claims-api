@@ -129,3 +129,6 @@ Content-Type: application/json
 {
   "status": "Received"
 }
+
+### Health check
+GET {{baseUrl}}/health

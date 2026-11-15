@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using ClaimsApi.Data;
 using ClaimsApi.Services;
 using Microsoft.EntityFrameworkCore;
@@ -19,23 +18,24 @@ builder.Services.AddScoped<IClaimService, ClaimService>();
 
 builder.Services.AddSingleton(TimeProvider.System);
 
+builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+app.MapOpenApi();
+app.UseSwaggerUI(options =>
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
-    });
-}
+    options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
+});
 
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHealthChecks("/health");
 
 app.Run();
