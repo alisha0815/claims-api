@@ -439,9 +439,17 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
     public async Task UpdateStatusAsync_NonExistingId_ReturnsNotFound()
     {
         // Arrange
+        await using var db = fixture.CreateDbContext();
+        var service = CreateService(db);
+
+        const int nonExistentId = int.MaxValue;
+
+        var request = StatusRequest(ClaimStatus.InReview);
 
         // Act
+        var result = await service.UpdateStatusAsync(nonExistentId, request);
 
         // Assert
+        Assert.Equal(UpdateClaimStatusResult.NotFound, result);
     }
 }
