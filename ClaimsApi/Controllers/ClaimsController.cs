@@ -81,4 +81,24 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
             _ => throw new UnreachableException(),
         };
     }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult> DeleteById(int id, CancellationToken cancellationToken)
+    {
+        var result = await claimService.DeleteAsync(id, cancellationToken);
+
+        return result switch
+        {
+            DeleteClaimResult.Deleted => NoContent(),
+            DeleteClaimResult.NotFound => NotFound(),
+            DeleteClaimResult.NotDeletable => Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                detail: "Only claims in Received status can be deleted."
+            ),
+            _ => throw new UnreachableException(),
+        };
+    }
 }
