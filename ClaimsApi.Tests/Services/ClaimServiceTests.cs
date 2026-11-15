@@ -357,4 +357,20 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         Assert.NotNull(stored);
         Assert.Equal(ClaimStatus.InReview, stored.Status);
     }
+
+    [Fact]
+    public async Task DeleteAsync_NonExistingId_ReturnsNotFound()
+    {
+        // Arrange
+        await using var db = fixture.CreateDbContext();
+        var service = CreateService(db);
+        const int nonExistentId = int.MaxValue;
+
+        // Act
+        var result = await service.DeleteAsync(nonExistentId);
+
+        // Assert
+
+        Assert.Equal(DeleteClaimResult.NotFound, result);
+    }
 }
