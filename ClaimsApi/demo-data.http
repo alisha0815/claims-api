@@ -1,0 +1,194 @@
+# Demo data seed for the Claims API.
+#
+# Run the requests top to bottom (one at a time, in order).
+# The result is 8 claims spread across every status:
+#   Received: 3  |  InReview: 2  |  Approved: 2  |  Rejected: 1
+#
+# Status flow enforced by the API: Received -> InReview -> Approved | Rejected
+# Point @baseUrl at the deployed Azure URL to seed that environment instead.
+
+@baseUrl = http://localhost:5175
+# @baseUrl = https://claims-api-jungah-h3fre0dfd8asbeed.swedencentral-01.azurewebsites.net
+
+### Wake up the API (first request can be slow on the free tier)
+GET {{baseUrl}}/health
+
+# ============================================================
+# 1. Create claims (all start in Received)
+# ============================================================
+
+### Claim 1 - lost baggage (stays Received)
+# @name lostBaggage
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-104521",
+  "title": "Checked baggage lost on connecting flight",
+  "description": "Bag never arrived at ICN after transfer in Frankfurt. Airline PIR reference FRA-LH-88213.",
+  "amount": 1850.00,
+  "incidentDate": "2026-11-10"
+}
+
+### Claim 2 - flight delay (stays Received)
+# @name flightDelay
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-118734",
+  "title": "Flight delayed 9 hours, extra hotel night",
+  "description": "KE908 LHR-ICN delayed overnight due to technical issue. Hotel and meals paid out of pocket.",
+  "amount": 320.50,
+  "incidentDate": "2026-11-12"
+}
+
+### Claim 3 - phone stolen (stays Received)
+# @name stolenPhone
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-120087",
+  "title": "Mobile phone stolen in Barcelona",
+  "description": "Pickpocketed on the metro. Police report filed at Mossos d'Esquadra station.",
+  "amount": 1100.00,
+  "incidentDate": "2026-11-08"
+}
+
+### Claim 4 - medical (-> InReview)
+# @name medicalTreatment
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-097310",
+  "title": "Emergency room visit for food poisoning",
+  "description": "Treated at Bangkok Hospital. Receipts and doctor's note attached.",
+  "amount": 2780.00,
+  "incidentDate": "2026-10-29"
+}
+
+### Claim 5 - trip cancellation (-> InReview)
+# @name tripCancellation
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-101942",
+  "title": "Trip cancelled due to family emergency",
+  "description": "Non-refundable flights and hotel for Osaka trip cancelled two days before departure.",
+  "amount": 4200.00,
+  "incidentDate": "2026-10-20"
+}
+
+### Claim 6 - damaged suitcase (-> Approved)
+# @name damagedSuitcase
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-118734",
+  "title": "Suitcase wheels broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Damage report filed at the airport.",
+  "amount": 250.00,
+  "incidentDate": "2026-10-05"
+}
+
+### Claim 7 - ski injury (-> Approved)
+# @name skiInjury
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-088456",
+  "title": "Wrist fracture while skiing",
+  "description": "X-ray and cast at clinic in Niseko. Follow-up appointment included.",
+  "amount": 3650.00,
+  "incidentDate": "2026-09-18"
+}
+
+### Claim 8 - missed cruise (-> Rejected)
+# @name missedCruise
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+
+{
+  "policyNumber": "TRV-2026-092003",
+  "title": "Missed cruise departure",
+  "description": "Arrived at port after boarding closed. Overslept at the hotel.",
+  "amount": 5400.00,
+  "incidentDate": "2026-09-30"
+}
+
+# ============================================================
+# 2. Move claims through the workflow
+# ============================================================
+
+### Claim 4 -> InReview
+PATCH {{baseUrl}}/api/claims/{{medicalTreatment.response.body.$.id}}/status
+Content-Type: application/json
+
+{ "status": "InReview" }
+
+### Claim 5 -> InReview
+PATCH {{baseUrl}}/api/claims/{{tripCancellation.response.body.$.id}}/status
+Content-Type: application/json
+
+{ "status": "InReview" }
+
+### Claim 6 -> InReview
+PATCH {{baseUrl}}/api/claims/{{damagedSuitcase.response.body.$.id}}/status
+Content-Type: application/json
+
+{ "status": "InReview" }
+
+### Claim 6 -> Approved
+PATCH {{baseUrl}}/api/claims/{{damagedSuitcase.response.body.$.id}}/status
+Content-Type: application/json
+
+{ "status": "Approved" }
+
+### Claim 7 -> InReview
+PATCH {{baseUrl}}/api/claims/{{skiInjury.response.body.$.id}}/status
+Content-Type: application/json
+
+{ "status": "InReview" }
+
+### Claim 7 -> Approved
+PATCH {{baseUrl}}/api/claims/{{skiInjury.response.body.$.id}}/status
+Content-Type: application/json
+
+{ "status": "Approved" }
+
+### Claim 8 -> InReview
+PATCH {{baseUrl}}/api/claims/{{missedCruise.response.body.$.id}}/status
+Content-Type: application/json
+
+{ "status": "InReview" }
+
+### Claim 8 -> Rejected
+PATCH {{baseUrl}}/api/claims/{{missedCruise.response.body.$.id}}/status
+Content-Type: application/json
+
+{ "status": "Rejected" }
+
+# ============================================================
+# 3. Verify
+# Expected counts assume the database was empty before seeding.
+# ============================================================
+
+### All claims
+GET {{baseUrl}}/api/claims
+
+### Received (expect 3)
+GET {{baseUrl}}/api/claims?status=Received
+
+### InReview (expect 2)
+GET {{baseUrl}}/api/claims?status=InReview
+
+### Approved (expect 2)
+GET {{baseUrl}}/api/claims?status=Approved
+
+### Rejected (expect 1)
+GET {{baseUrl}}/api/claims?status=Rejected
