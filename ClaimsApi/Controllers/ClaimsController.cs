@@ -101,4 +101,29 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
             _ => throw new UnreachableException(),
         };
     }
+
+    [HttpPatch("{id:int}/status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult> UpdateStatusById(
+        int id,
+        UpdateClaimStatusRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await claimService.UpdateStatusAsync(id, request, cancellationToken);
+
+        return result switch
+        {
+            UpdateClaimStatusResult.Updated => NoContent(),
+            UpdateClaimStatusResult.NotFound => NotFound(),
+            UpdateClaimStatusResult.InvalidTransition => Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                detail: "This status change is not allowed. Allowed: Received -> InReview -> Approved or Rejected"
+            ),
+            _ => throw new UnreachableException(),
+        };
+    }
 }

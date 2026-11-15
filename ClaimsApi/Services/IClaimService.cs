@@ -25,4 +25,10 @@ public interface IClaimService
     );
 
     Task<DeleteClaimResult> DeleteAsync(int id, CancellationToken cancellationToken = default);
+
+    Task<UpdateClaimStatusResult> UpdateStatusAsync(
+        int id,
+        UpdateClaimStatusRequest request,
+        CancellationToken cancellationToken = default
+    );
 }

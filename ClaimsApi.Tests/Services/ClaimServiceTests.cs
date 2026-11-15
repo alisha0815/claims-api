@@ -5,7 +5,6 @@ using ClaimsApi.Services;
 using ClaimsApi.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
-using Org.BouncyCastle.Crypto.Paddings;
 
 namespace ClaimsApi.Tests.Services;
 
@@ -32,6 +31,8 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
             Amount: 18000.75m,
             Description: "The leak also spread to the hallway floor."
         );
+
+    private static UpdateClaimStatusRequest StatusRequest(ClaimStatus status) => new(status);
 
     // CreateAsync
 
@@ -372,5 +373,83 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         // Assert
 
         Assert.Equal(DeleteClaimResult.NotFound, result);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_AllowedTransition_UpdatesStatus()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create one claim (Received)
+        var arrangeService = CreateService(arrangeDb);
+        var received = await arrangeService.CreateAsync(42, ValidRequest());
+
+        var id = received.Id;
+        var request = StatusRequest(ClaimStatus.InReview);
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.UpdateStatusAsync(id, request);
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+        var assertService = CreateService(assertDb);
+
+        var stored = await assertService.GetByIdAsync(id);
+
+        Assert.Equal(UpdateClaimStatusResult.Updated, result);
+        Assert.NotNull(stored);
+        Assert.Equal(ClaimStatus.InReview, stored.Status);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_InvalidTransition_ReturnsInvalidTransition()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create one claim (Received)
+        var arrangeService = CreateService(arrangeDb);
+        var received = await arrangeService.CreateAsync(42, ValidRequest());
+
+        var id = received.Id;
+        var request = StatusRequest(ClaimStatus.Approved);
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.UpdateStatusAsync(id, request);
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+        var assertService = CreateService(assertDb);
+
+        var stored = await assertService.GetByIdAsync(id);
+
+        Assert.Equal(UpdateClaimStatusResult.InvalidTransition, result);
+        Assert.NotNull(stored);
+        Assert.Equal(ClaimStatus.Received, stored.Status);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_NonExistingId_ReturnsNotFound()
+    {
+        // Arrange
+        await using var db = fixture.CreateDbContext();
+        var service = CreateService(db);
+
+        const int nonExistentId = int.MaxValue;
+
+        var request = StatusRequest(ClaimStatus.InReview);
+
+        // Act
+        var result = await service.UpdateStatusAsync(nonExistentId, request);
+
+        // Assert
+        Assert.Equal(UpdateClaimStatusResult.NotFound, result);
     }
 }

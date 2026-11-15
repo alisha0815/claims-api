@@ -97,3 +97,35 @@ DELETE  {{baseUrl}}/api/claims/{{nonExistentId}}
 
 ### Delete claim, - not deletable (409)
 DELETE {{baseUrl}}/api/claims/{{inReviewId}}
+
+### Update status - success (204)
+PATCH  {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
+Content-Type: application/json
+
+{
+  "status": "InReview"
+}
+
+### Update status - bad request (400)
+PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
+Content-Type: application/json
+
+{
+  "status": "Pending"
+}
+
+### Update status - not found (404)
+PATCH {{baseUrl}}/api/claims/{{nonExistentId}}/status
+Content-Type: application/json
+
+{
+  "status": "InReview"
+}
+
+### Update status - invalid transition (409)
+PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
+Content-Type: application/json
+
+{
+  "status": "Received"
+}

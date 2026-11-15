@@ -124,4 +124,35 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
 
         return DeleteClaimResult.Deleted;
     }
+
+    public async Task<UpdateClaimStatusResult> UpdateStatusAsync(
+        int id,
+        UpdateClaimStatusRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var claim = await db.Claims.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (claim is null)
+        {
+            return UpdateClaimStatusResult.NotFound;
+        }
+
+        var currentStatus = claim.Status;
+        var newStatus = request.Status!.Value;
+
+        if (!ClaimStatusTransitions.CanTransition(currentStatus, newStatus))
+        {
+            return UpdateClaimStatusResult.InvalidTransition;
+        }
+
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+
+        claim.Status = newStatus;
+        claim.UpdatedAt = now;
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return UpdateClaimStatusResult.Updated;
+    }
 }
