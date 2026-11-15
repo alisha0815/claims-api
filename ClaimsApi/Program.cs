@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using ClaimsApi.Data;
 using ClaimsApi.Services;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +18,8 @@ builder.Services.AddScoped<IClaimService, ClaimService>();
 
 builder.Services.AddSingleton(TimeProvider.System);
 
+builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -34,5 +35,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHealthChecks("/health");
 
 app.Run();
