@@ -88,3 +88,12 @@ Content-Type: application/json
   "amount": 3200,
   "incidentDate": "2026-11-01"
 }
+
+### Delete claim - success (204)
+DELETE  {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+
+### Delete claim - not found (404)
+DELETE  {{baseUrl}}/api/claims/{{nonExistentId}}
+
+### Delete claim, - not deletable (409)
+DELETE {{baseUrl}}/api/claims/{{inReviewId}}

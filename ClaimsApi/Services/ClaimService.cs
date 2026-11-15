@@ -101,4 +101,27 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
 
         return UpdateClaimResult.Updated;
     }
+
+    public async Task<DeleteClaimResult> DeleteAsync(
+        int id,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var claimToDelete = await db.Claims.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (claimToDelete is null)
+        {
+            return DeleteClaimResult.NotFound;
+        }
+
+        if (claimToDelete.Status is not ClaimStatus.Received)
+        {
+            return DeleteClaimResult.NotDeletable;
+        }
+
+        db.Claims.Remove(claimToDelete);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return DeleteClaimResult.Deleted;
+    }
 }
