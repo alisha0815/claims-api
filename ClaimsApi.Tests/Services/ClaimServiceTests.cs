@@ -409,10 +409,30 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
     public async Task UpdateStatusAsync_InvalidTransition_ReturnsInvalidTransition()
     {
         // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create one claim (Received)
+        var arrangeService = CreateService(arrangeDb);
+        var received = await arrangeService.CreateAsync(42, ValidRequest());
+
+        var id = received.Id;
+        var request = StatusRequest(ClaimStatus.Approved);
 
         // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.UpdateStatusAsync(id, request);
 
         // Assert
+        await using var assertDb = fixture.CreateDbContext();
+        var assertService = CreateService(assertDb);
+
+        var stored = await assertService.GetByIdAsync(id);
+
+        Assert.Equal(UpdateClaimStatusResult.InvalidTransition, result);
+        Assert.NotNull(stored);
+        Assert.Equal(ClaimStatus.Received, stored.Status);
     }
 
     [Fact]
