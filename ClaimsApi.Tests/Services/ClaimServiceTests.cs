@@ -323,4 +323,38 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         Assert.Equal(DeleteClaimResult.Deleted, result);
         Assert.Null(stored);
     }
+
+    [Fact]
+    public async Task DeleteAsync_InReviewClaim_ReturnsNotDeletable()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create one claim (Received)
+        var arrangeService = CreateService(arrangeDb);
+        var created = await arrangeService.CreateAsync(42, ValidRequest());
+
+        var id = created.Id;
+
+        // Move to InReview
+        await arrangeDb
+            .Claims.Where(c => c.Id == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Status, ClaimStatus.InReview));
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.DeleteAsync(id);
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+        var assertService = CreateService(assertDb);
+
+        var stored = await assertService.GetByIdAsync(id);
+
+        Assert.Equal(DeleteClaimResult.NotDeletable, result);
+        Assert.NotNull(stored);
+        Assert.Equal(ClaimStatus.InReview, stored.Status);
+    }
 }
