@@ -19,6 +19,8 @@ Built with ASP.NET Core, EF Core and PostgreSQL, and deployed to Azure.
 |---|---|---|
 | customer | demo-password | Customer |
 
+The admin account is not public. Run the app locally with your own `Admin:*` settings to try admin features.
+
 Login is available after the auth endpoints are added.
 
 ---
@@ -157,6 +159,13 @@ The trade-off is slower tests that need Docker, but I think the reliability is w
 This is a portfolio demo, so Swagger is open for reviewers to try the API.
 In a real system I would only enable it in development or put it behind authentication.
 
+markdown
+### Admin bootstrap from configuration
+Handlers are created by an admin through the API, so the first admin has to come from outside the API.
+On startup, the app creates an admin from `Admin:Username` and `Admin:Password` if none exists.
+The password lives in user-secrets locally and in App Service settings in Azure, so it is never in Git.
+The check is idempotent: restarting the app does not create another admin.
+
 ## Testing
 - **Service tests** cover create, read, update, delete and status changes, including the business rules
   (only `Received` claims can be edited or deleted) and not-found cases. They run against a real PostgreSQL database.
@@ -193,13 +202,17 @@ dotnet user-secrets set "ConnectionStrings:ClaimsDb" \
   "Host=localhost;Port=5433;Database=claims;Username=claims;Password=<your-password>" \
   --project ClaimsApi
 
-# 3. Apply migrations and run the API
+# 3. (Optional) Configure the admin account. The first admin is created on startup.
+dotnet user-secrets set "Admin:Username" "admin" --project ClaimsApi
+dotnet user-secrets set "Admin:Password" "<choose-a-password>" --project ClaimsApi
+
+# 4. Apply migrations and run the API
 dotnet ef database update --project ClaimsApi
 dotnet run --project ClaimsApi
 ```
 
 Use the same password as `POSTGRES_PASSWORD` in [`docker-compose.yml`](docker-compose.yml).
-
+If `Admin:*` is not set, the app starts normally and skips admin creation.
 Open http://localhost:5175/swagger.
 
 Example requests are in [`ClaimsApi/ClaimsApi.http`](ClaimsApi/ClaimsApi.http).
