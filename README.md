@@ -19,6 +19,8 @@ Built with ASP.NET Core, EF Core and PostgreSQL, and deployed to Azure.
 |---|---|---|
 | customer | demo-password | Customer |
 
+The admin account is not public. Run the app locally with your own `Admin:*` settings to try admin features.
+
 Login is available after the auth endpoints are added.
 
 ---
@@ -193,13 +195,17 @@ dotnet user-secrets set "ConnectionStrings:ClaimsDb" \
   "Host=localhost;Port=5433;Database=claims;Username=claims;Password=<your-password>" \
   --project ClaimsApi
 
-# 3. Apply migrations and run the API
+# 3. (Optional) Configure the admin account. The first admin is created on startup.
+dotnet user-secrets set "Admin:Username" "admin" --project ClaimsApi
+dotnet user-secrets set "Admin:Password" "<choose-a-password>" --project ClaimsApi
+
+# 4. Apply migrations and run the API
 dotnet ef database update --project ClaimsApi
 dotnet run --project ClaimsApi
 ```
 
 Use the same password as `POSTGRES_PASSWORD` in [`docker-compose.yml`](docker-compose.yml).
-
+If `Admin:*` is not set, the app starts normally and skips admin creation.
 Open http://localhost:5175/swagger.
 
 Example requests are in [`ClaimsApi/ClaimsApi.http`](ClaimsApi/ClaimsApi.http).
