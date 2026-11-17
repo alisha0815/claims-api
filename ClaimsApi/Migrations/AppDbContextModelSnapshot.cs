@@ -117,6 +117,15 @@ namespace ClaimsApi.Migrations
                             Username = "customer"
                         });
                 });
+
+            modelBuilder.Entity("ClaimsApi.Models.Claim", b =>
+                {
+                    b.HasOne("ClaimsApi.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
 #pragma warning restore 612, 618
         }
     }

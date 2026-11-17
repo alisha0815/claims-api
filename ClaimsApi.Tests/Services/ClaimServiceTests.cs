@@ -34,6 +34,9 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
     private static UpdateClaimStatusRequest StatusRequest(ClaimStatus status) => new(status);
 
+    // Seeded demo customer. Claims.CustomerId has a FK to Users.Id, so tests must use an existing customer Id.
+    private const int SeededCustomerId = 1;
+
     // CreateAsync
 
     [Fact]
@@ -44,7 +47,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         var service = CreateService(db);
 
         // Act
-        var response = await service.CreateAsync(42, ValidRequest());
+        var response = await service.CreateAsync(SeededCustomerId, ValidRequest());
 
         // Assert
         Assert.Equal(ClaimStatus.Received, response.Status);
@@ -58,7 +61,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         var service = CreateService(db);
 
         // Act
-        var response = await service.CreateAsync(42, ValidRequest());
+        var response = await service.CreateAsync(SeededCustomerId, ValidRequest());
 
         // Assert
         Assert.Equal(_fixedTime.UtcDateTime, response.CreatedAt);
@@ -71,13 +74,12 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         // Arrange
         await using var db = fixture.CreateDbContext();
         var service = CreateService(db);
-        const int customerId = 42;
 
         // Act
-        var response = await service.CreateAsync(customerId, ValidRequest());
+        var response = await service.CreateAsync(SeededCustomerId, ValidRequest());
 
         // Assert
-        Assert.Equal(customerId, response.CustomerId);
+        Assert.Equal(SeededCustomerId, response.CustomerId);
     }
 
     // GetByIdAsync
@@ -88,7 +90,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var arrangeDb = fixture.CreateDbContext();
         var arrangeService = CreateService(arrangeDb);
 
-        var created = await arrangeService.CreateAsync(42, ValidRequest());
+        var created = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
 
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
@@ -141,14 +143,14 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Created at 10:30
         var olderService = CreateService(arrangeDb);
-        var older = await olderService.CreateAsync(42, ValidRequest());
+        var older = await olderService.CreateAsync(SeededCustomerId, ValidRequest());
 
         // Created at 10:31
         var timeProvider = new FakeTimeProvider(_fixedTime);
         timeProvider.Advance(TimeSpan.FromMinutes(1));
 
         var newerService = CreateService(arrangeDb, timeProvider);
-        var newer = await newerService.CreateAsync(42, ValidRequest());
+        var newer = await newerService.CreateAsync(SeededCustomerId, ValidRequest());
 
         // Act
         await using var actDb = fixture.CreateDbContext();
@@ -170,8 +172,8 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Create two claims (both Received)
         var arrangeService = CreateService(arrangeDb);
-        var received = await arrangeService.CreateAsync(42, ValidRequest());
-        var toApprove = await arrangeService.CreateAsync(42, ValidRequest());
+        var received = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
+        var toApprove = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
 
         // Approve one of them
         await arrangeDb
@@ -197,8 +199,8 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Create two claims (both Received)
         var arrangeService = CreateService(arrangeDb);
-        var received = await arrangeService.CreateAsync(42, ValidRequest());
-        var toApprove = await arrangeService.CreateAsync(42, ValidRequest());
+        var received = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
+        var toApprove = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
 
         // Approve one of them
         await arrangeDb
@@ -224,7 +226,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Create one claim (Received)
         var arrangeService = CreateService(arrangeDb);
-        var received = await arrangeService.CreateAsync(42, ValidRequest());
+        var received = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
 
         var id = received.Id;
         var request = ValidUpdateRequest();
@@ -255,7 +257,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Create one claim (Received)
         var arrangeService = CreateService(arrangeDb);
-        var created = await arrangeService.CreateAsync(42, ValidRequest());
+        var created = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
 
         var id = created.Id;
         var request = ValidUpdateRequest();
@@ -305,7 +307,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var arrangeDb = fixture.CreateDbContext();
         var arrangeService = CreateService(arrangeDb);
 
-        var created = await arrangeService.CreateAsync(42, ValidRequest());
+        var created = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
 
         var idToDelete = created.Id;
 
@@ -333,7 +335,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Create one claim (Received)
         var arrangeService = CreateService(arrangeDb);
-        var created = await arrangeService.CreateAsync(42, ValidRequest());
+        var created = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
 
         var id = created.Id;
 
@@ -383,7 +385,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Create one claim (Received)
         var arrangeService = CreateService(arrangeDb);
-        var received = await arrangeService.CreateAsync(42, ValidRequest());
+        var received = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
 
         var id = received.Id;
         var request = StatusRequest(ClaimStatus.InReview);
@@ -413,7 +415,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Create one claim (Received)
         var arrangeService = CreateService(arrangeDb);
-        var received = await arrangeService.CreateAsync(42, ValidRequest());
+        var received = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
 
         var id = received.Id;
         var request = StatusRequest(ClaimStatus.Approved);
