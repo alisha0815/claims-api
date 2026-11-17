@@ -1,6 +1,7 @@
 using ClaimsApi.Data;
 using ClaimsApi.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClaimsApi.Auth;
 
@@ -32,5 +33,13 @@ public static class AdminBootstrapper
         }
 
         username = username.Trim().ToLowerInvariant();
+
+        // Creates the admin only once. If an admin already exists, we stop here,
+        // so changing Admin:Username or Admin:Password later has no effect.
+        if (await db.Users.AnyAsync(u => u.Role == Roles.Admin))
+        {
+            logger.LogInformation("Admin already exists; skipping bootsrap.");
+            return;
+        }
     }
 }
