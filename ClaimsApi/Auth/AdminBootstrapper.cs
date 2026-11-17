@@ -50,5 +50,21 @@ public static class AdminBootstrapper
             );
             return;
         }
+
+        // Create the admin user
+        var user = new User
+        {
+            Username = username,
+            Role = Roles.Admin,
+            CreatedAt = timeProvider.GetUtcNow(),
+            PasswordHash = string.Empty,
+        };
+
+        user.PasswordHash = passwordHasher.HashPassword(user, password);
+
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        logger.LogInformation("Admin user {Username} created.", username);
     }
 }
