@@ -30,5 +30,7 @@ public static class AdminBootstrapper
             logger.LogWarning("Admin not configured; skipping bootstrap.");
             return;
         }
+
+        username = username.Trim().ToLowerInvariant();
     }
 }
