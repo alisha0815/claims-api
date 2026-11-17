@@ -57,5 +57,12 @@ public class AppDbContext : DbContext
                     CreatedAt = new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero),
                 }
             );
+
+        modelBuilder
+            .Entity<Claim>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(c => c.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
