@@ -159,6 +159,13 @@ The trade-off is slower tests that need Docker, but I think the reliability is w
 This is a portfolio demo, so Swagger is open for reviewers to try the API.
 In a real system I would only enable it in development or put it behind authentication.
 
+markdown
+### Admin bootstrap from configuration
+Handlers are created by an admin through the API, so the first admin has to come from outside the API.
+On startup, the app creates an admin from `Admin:Username` and `Admin:Password` if none exists.
+The password lives in user-secrets locally and in App Service settings in Azure, so it is never in Git.
+The check is idempotent: restarting the app does not create another admin.
+
 ## Testing
 - **Service tests** cover create, read, update, delete and status changes, including the business rules
   (only `Received` claims can be edited or deleted) and not-found cases. They run against a real PostgreSQL database.
