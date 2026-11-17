@@ -42,5 +42,20 @@ public class AppDbContext : DbContext
 
         // Seeded users use fixed Ids (customer = 1). Start auto-generated Ids at 100 to avoid collisions with seed data.
         modelBuilder.Entity<User>().Property(u => u.Id).HasIdentityOptions(startValue: 100);
+
+        modelBuilder
+            .Entity<User>()
+            .HasData(
+                new User
+                {
+                    Id = 1,
+                    Username = "customer",
+                    // Fixed hash of the demo password. Generated once with PasswordHasher
+                    PasswordHash =
+                        "AQAAAAIAAYagAAAAEFGwj4qQW2zVnoy9l/K/JnjmIPCyZtp62KwxW21UmV/iMCVqTQrmxYcrzYf1HgnrWQ==",
+                    Role = Roles.Customer,
+                    CreatedAt = new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero),
+                }
+            );
     }
 }

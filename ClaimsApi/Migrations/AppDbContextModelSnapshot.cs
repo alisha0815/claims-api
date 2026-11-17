@@ -106,6 +106,16 @@ namespace ClaimsApi.Migrations
                         {
                             t.HasCheckConstraint("CK_Users_Role", "\"Role\" IN ('Customer', 'Handler', 'Admin')");
                         });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PasswordHash = "AQAAAAIAAYagAAAAEFGwj4qQW2zVnoy9l/K/JnjmIPCyZtp62KwxW21UmV/iMCVqTQrmxYcrzYf1HgnrWQ==",
+                            Role = "Customer",
+                            Username = "customer"
+                        });
                 });
 #pragma warning restore 612, 618
         }
