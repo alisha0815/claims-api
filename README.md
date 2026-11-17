@@ -13,6 +13,14 @@ Built with ASP.NET Core, EF Core and PostgreSQL, and deployed to Azure.
 > Hosted on the free tier. The first request after a quiet period can take 10–30 seconds while the app wakes up.
 > The demo database is seeded with sample travel insurance claims in every status.
 
+### Demo account
+
+| Username | Password | Role |
+|---|---|---|
+| customer | demo-password | Customer |
+
+Login is available after the auth endpoints are added.
+
 ---
 
 ## Features
