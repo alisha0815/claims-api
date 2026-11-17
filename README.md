@@ -177,15 +177,20 @@ Docker must be running, because the tests start a PostgreSQL container.
 git clone https://github.com/alisha0815/claims-api.git
 cd claims-api
 
-# 1. Start PostgreSQL
+# 1. Start PostgreSQL (Docker, port 5433)
 docker compose up -d
 
-# 2. Create the database schema
-dotnet ef database update --project ClaimsApi
+# 2. Store the connection string in user-secrets (not committed to Git)
+dotnet user-secrets set "ConnectionStrings:ClaimsDb" \
+  "Host=localhost;Port=5433;Database=claims;Username=claims;Password=<your-password>" \
+  --project ClaimsApi
 
-# 3. Run the API
+# 3. Apply migrations and run the API
+dotnet ef database update --project ClaimsApi
 dotnet run --project ClaimsApi
 ```
+
+Use the same password as `POSTGRES_PASSWORD` in [`docker-compose.yml`](docker-compose.yml).
 
 Open http://localhost:5175/swagger.
 
