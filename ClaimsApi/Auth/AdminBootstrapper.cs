@@ -41,5 +41,14 @@ public static class AdminBootstrapper
             logger.LogInformation("Admin already exists; skipping bootsrap.");
             return;
         }
+
+        if (await db.Users.AnyAsync(u => u.Username == username))
+        {
+            logger.LogWarning(
+                "Admin bootstrap skipped: username {Username} is already taken.",
+                username
+            );
+            return;
+        }
     }
 }
