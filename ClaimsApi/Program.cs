@@ -1,3 +1,4 @@
+using ClaimsApi.Auth;
 using ClaimsApi.Data;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
@@ -25,6 +26,8 @@ builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
 var app = builder.Build();
+
+await AdminBootstrapper.EnsureAdminAsync(app.Services);
 
 app.UseExceptionHandler();
 
