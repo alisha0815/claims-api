@@ -1,5 +1,7 @@
 using ClaimsApi.Data;
+using ClaimsApi.Models;
 using ClaimsApi.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +19,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IClaimService, ClaimService>();
 
 builder.Services.AddSingleton(TimeProvider.System);
+
+builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
