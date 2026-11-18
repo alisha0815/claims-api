@@ -132,3 +132,31 @@ Content-Type: application/json
 
 ### Health check
 GET {{baseUrl}}/health
+
+### Register - success (201)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": " Http-Bob ",
+  "password": "bob-password"
+}
+
+### Register - short password (400)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "http-carol",
+  "password": "short"
+}
+
+### Register - role is ignored (201, Customer)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "http-dave",
+  "password": "dave-password",
+  "role": "Handler"
+}

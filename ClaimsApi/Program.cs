@@ -19,6 +19,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<IClaimService, ClaimService>();
 
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
