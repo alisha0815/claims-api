@@ -11,7 +11,7 @@ namespace ClaimsApi.Tests.Auth;
 
 public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
-    private const string Password = "alice-password";
+    private const string Password = "password";
     private readonly DateTimeOffset _fixedTime = new(2026, 11, 1, 10, 30, 0, TimeSpan.Zero);
 
     private readonly PasswordHasher<User> _hasher = new();
@@ -59,5 +59,32 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
             new RegisterResponse(saved.Id, "alice", Roles.Customer, _fixedTime),
             result.Response
         );
+    }
+
+    [Fact]
+    public async Task RegisterAsync_WithExistingUsername_ReturnsUsernameTaken()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        // Register first time
+        await arrangeService.RegisterAsync(ValidRegisterRequest(" Erin "));
+
+        // Act
+        // Register again with the same name in different casing
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb);
+
+        var result = await actService.RegisterAsync(ValidRegisterRequest(" ERIN "));
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+
+        var count = await assertDb.Users.CountAsync(u => u.Username == "erin");
+
+        Assert.Equal(RegisterStatus.UsernameTaken, result.Status);
+        Assert.Null(result.Response);
+        Assert.Equal(1, count);
     }
 }
