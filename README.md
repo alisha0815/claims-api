@@ -101,6 +101,34 @@ sequenceDiagram
 | DELETE | `/api/claims/{id}` | Delete a claim (`Received` only) | 204, 404, 409 |
 | PATCH | `/api/claims/{id}/status` | Change status | 204, 400, 404, 409 |
 | GET | `/health` | App and database health | 200, 503 |
+| POST | `/api/auth/register` | Register a new user (always created as `Customer`) | 201, 400, 409 |
+
+## Authentication
+
+### Register
+
+`POST /api/auth/register`
+
+```json
+{
+  "username": "alice",
+  "password": "alice-password"
+}
+```
+
+| Status | When |
+|---|---|
+| 201 Created | The user is created. The response contains `id`, `username`, `role`, `createdAt`. |
+| 400 Bad Request | Validation failed (e.g. password shorter than 8 characters). |
+| 409 Conflict | The username is already taken. |
+
+Rules:
+- Usernames are case-insensitive and trimmed: `" Alice "` is stored as `alice`.
+- Passwords must be at least 8 characters and are stored as hashes. The hash is never returned.
+- New users are always `Customer`. A `role` sent in the request is ignored.
+- Duplicate usernames are blocked twice: a check before saving, and a unique index for concurrent requests.
+
+Example requests are in [`ClaimsApi/ClaimsApi.http`](ClaimsApi/ClaimsApi.http).
 
 ## Status workflow
 
@@ -159,7 +187,6 @@ The trade-off is slower tests that need Docker, but I think the reliability is w
 This is a portfolio demo, so Swagger is open for reviewers to try the API.
 In a real system I would only enable it in development or put it behind authentication.
 
-markdown
 ### Admin bootstrap from configuration
 Handlers are created by an admin through the API, so the first admin has to come from outside the API.
 On startup, the app creates an admin from `Admin:Username` and `Admin:Password` if none exists.
