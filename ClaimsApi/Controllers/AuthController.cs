@@ -12,6 +12,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPost("register")]
     [ProducesResponseType<RegisterResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     [AllowAnonymous]
     public async Task<ActionResult<RegisterResponse>> RegisterUser(
         RegisterRequest request,
@@ -20,6 +21,14 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         var registerResponse = await authService.RegisterAsync(request, cancellationToken);
 
-        return StatusCode(StatusCodes.Status201Created, registerResponse);
+        if (registerResponse.Status == RegisterStatus.UsernameTaken)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Username is already taken."
+            );
+        }
+
+        return StatusCode(StatusCodes.Status201Created, registerResponse.Response);
     }
 }

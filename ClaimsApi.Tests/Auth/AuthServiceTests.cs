@@ -11,13 +11,13 @@ namespace ClaimsApi.Tests.Auth;
 
 public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
-    private const string Password = "alice-password";
+    private const string Password = "password";
     private readonly DateTimeOffset _fixedTime = new(2026, 11, 1, 10, 30, 0, TimeSpan.Zero);
 
     private readonly PasswordHasher<User> _hasher = new();
 
     private static RegisterRequest ValidRegisterRequest(string username) =>
-        new(Username: username, Password);
+        new(Username: username, Password: Password);
 
     private AuthService CreateAuthService(AppDbContext db, FakeTimeProvider? timeProvider = null) =>
         new(db, _hasher, timeProvider ?? new FakeTimeProvider(_fixedTime));
@@ -31,12 +31,15 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         var service = CreateAuthService(arrangeDb);
 
         // Act
-        var response = await service.RegisterAsync(ValidRegisterRequest(" Alice "));
+        var result = await service.RegisterAsync(ValidRegisterRequest(" Alice "));
 
         // Assert
+        Assert.Equal(RegisterStatus.Created, result.Status);
+        Assert.NotNull(result.Response);
+
         await using var assertDb = fixture.CreateDbContext();
 
-        var saved = await assertDb.Users.SingleAsync(u => u.Id == response.Id);
+        var saved = await assertDb.Users.SingleAsync(u => u.Id == result.Response.Id);
 
         Assert.NotEmpty(saved.PasswordHash);
         Assert.NotEqual(Password, saved.PasswordHash);
@@ -52,6 +55,36 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         // Ids start at 100 to stay clear of the seeded customer (Id 1).
         Assert.InRange(saved.Id, 100, int.MaxValue);
 
-        Assert.Equal(new RegisterResponse(saved.Id, "alice", Roles.Customer, _fixedTime), response);
+        Assert.Equal(
+            new RegisterResponse(saved.Id, "alice", Roles.Customer, _fixedTime),
+            result.Response
+        );
+    }
+
+    [Fact]
+    public async Task RegisterAsync_WithExistingUsername_ReturnsUsernameTaken()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        // Register first time
+        await arrangeService.RegisterAsync(ValidRegisterRequest(" Erin "));
+
+        // Act
+        // Register again with the same name in different casing
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb);
+
+        var result = await actService.RegisterAsync(ValidRegisterRequest(" ERIN "));
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+
+        var count = await assertDb.Users.CountAsync(u => u.Username == "erin");
+
+        Assert.Equal(RegisterStatus.UsernameTaken, result.Status);
+        Assert.Null(result.Response);
+        Assert.Equal(1, count);
     }
 }

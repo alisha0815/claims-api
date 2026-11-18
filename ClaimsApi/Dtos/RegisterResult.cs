@@ -1,3 +1,3 @@
 namespace ClaimsApi.Dtos;
 
-public record RegisterResult(int Id, string Username, string Role, DateTimeOffset CreatedAt);
+public record RegisterResult(RegisterStatus Status, RegisterResponse? Response);
