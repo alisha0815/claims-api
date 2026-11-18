@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 namespace ClaimsApi.Auth;
 
 public class AuthService(AppDbContext db, IPasswordHasher<User> hasher, TimeProvider timeProvider)
+    : IAuthService
 {
     public async Task<RegisterResponse> RegisterAsync(
         RegisterRequest request,
