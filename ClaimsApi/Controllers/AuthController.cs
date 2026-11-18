@@ -20,6 +20,11 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         var registerResponse = await authService.RegisterAsync(request, cancellationToken);
 
-        return StatusCode(StatusCodes.Status201Created, registerResponse);
+        if (registerResponse.Status == RegisterStatus.UsernameTaken)
+        {
+            return StatusCode(StatusCodes.Status409Conflict, registerResponse);
+        }
+
+        return StatusCode(StatusCodes.Status201Created, registerResponse.Response);
     }
 }
