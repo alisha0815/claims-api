@@ -2,6 +2,7 @@ using ClaimsApi.Data;
 using ClaimsApi.Dtos;
 using ClaimsApi.Mappings;
 using ClaimsApi.Models;
+using EntityFramework.Exceptions.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,7 +41,18 @@ public class AuthService(AppDbContext db, IPasswordHasher<User> hasher, TimeProv
         user.PasswordHash = hasher.HashPassword(user, request.Password);
 
         db.Users.Add(user);
-        await db.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        // Race condition: two requests with the same username can both pass the AnyAsync check
+        // The unique index rejects the second INSERT and return UsernameTaken (409)
+        catch (UniqueConstraintException ex)
+            when (ex.ConstraintProperties.Contains(nameof(User.Username)))
+        {
+            return new RegisterResult(RegisterStatus.UsernameTaken, null);
+        }
 
         return new RegisterResult(RegisterStatus.Created, user.ToRegisterResponse());
     }
