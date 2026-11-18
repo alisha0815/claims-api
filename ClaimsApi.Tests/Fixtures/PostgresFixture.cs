@@ -1,4 +1,5 @@
 using ClaimsApi.Data;
+using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 
@@ -16,6 +17,7 @@ public class PostgresFixture : IAsyncLifetime
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(ConnectionString)
+            .UseExceptionProcessor()
             .Options;
 
         return new AppDbContext(options);

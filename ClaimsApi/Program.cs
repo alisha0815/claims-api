@@ -2,6 +2,7 @@ using ClaimsApi.Auth;
 using ClaimsApi.Data;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
+using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("ClaimsDb"))
+    options.UseNpgsql(builder.Configuration.GetConnectionString("ClaimsDb")).UseExceptionProcessor()
 );
 
 builder.Services.AddScoped<IClaimService, ClaimService>();
