@@ -160,3 +160,12 @@ Content-Type: application/json
   "password": "dave-password",
   "role": "Handler"
 }
+
+### Register - username taken (409)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "HTTP-BOB",
+  "password": "bob-password"
+}
