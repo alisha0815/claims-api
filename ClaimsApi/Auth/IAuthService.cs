@@ -4,7 +4,7 @@ namespace ClaimsApi.Auth;
 
 public interface IAuthService
 {
-    Task<RegisterResponse> RegisterAsync(
+    Task<RegisterResult> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default
     );
