@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using ClaimsApi.Auth;
 using ClaimsApi.Models;
 using Microsoft.Extensions.Options;
@@ -37,7 +38,12 @@ public class TokenServiceTests(ITestOutputHelper output)
         // Act
         var result = new TokenService(options, timeProvider).CreateToken(user);
 
+        output.WriteLine($"Token     = {result.Token}");
         output.WriteLine($"ExpiresAt = {result.ExpiresAt}");
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Token);
+        output.WriteLine($"Header    = {jwt.Header.SerializeToJson()}");
+        output.WriteLine($"Payload   = {jwt.Payload.SerializeToJson()}");
 
         // Assert
         Assert.Equal(fixedNow.AddMinutes(60), result.ExpiresAt);
