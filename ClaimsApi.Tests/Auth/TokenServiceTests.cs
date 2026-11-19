@@ -74,4 +74,20 @@ public class TokenServiceTests(ITestOutputHelper output)
         Assert.Equal(FixedNow.UtcDateTime, jwt.ValidFrom);
         Assert.Equal(FixedNow.AddMinutes(60).UtcDateTime, jwt.ValidTo);
     }
+
+    [Fact]
+    public void CreateToken_DoesNotPutPasswordHashInPayload()
+    {
+        // Arrange
+        var user = CreateUser();
+
+        // Act
+        var result = CreateSut().CreateToken(user);
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Token);
+
+        var payloadJson = jwt.Payload.SerializeToJson();
+
+        // Assert
+        Assert.DoesNotContain(PasswordHash, payloadJson);
+    }
 }
