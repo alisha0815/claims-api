@@ -28,6 +28,14 @@ builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
+builder
+    .Services.AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 var app = builder.Build();
 
 await AdminBootstrapper.EnsureAdminAsync(app.Services);
