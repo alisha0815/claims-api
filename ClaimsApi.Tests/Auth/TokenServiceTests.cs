@@ -9,34 +9,44 @@ namespace ClaimsApi.Tests.Auth;
 
 public class TokenServiceTests(ITestOutputHelper output)
 {
+    private static readonly DateTimeOffset FixedNow = new(2026, 11, 1, 9, 30, 0, TimeSpan.Zero);
+
+    private const string PasswordHash = "not-a-real-hash";
+
+    private static TokenService CreateSut() =>
+        new(
+            Options.Create(
+                new JwtOptions
+                {
+                    Issuer = "test-issuer",
+                    Audience = "test-audience",
+                    Key = "test-signing-key-for-unit-tests-only-1234567890",
+                    ExpiresMinutes = 60,
+                }
+            ),
+            new FakeTimeProvider(FixedNow)
+        );
+
+    private static User CreateUser() =>
+        new()
+        {
+            Id = 3,
+            Username = "test-user",
+            PasswordHash = PasswordHash,
+            Role = Roles.Customer,
+            CreatedAt = FixedNow,
+        };
+
     [Fact]
     public void CreateToken_SetsExpiresAt_ToNowPlusExpiresMinutes()
     {
         // Arrange
-        var fixedNow = new DateTimeOffset(2026, 11, 1, 9, 30, 0, TimeSpan.Zero);
-        var timeProvider = new FakeTimeProvider(fixedNow);
+        var timeProvider = new FakeTimeProvider(FixedNow);
 
-        var options = Options.Create(
-            new JwtOptions
-            {
-                Issuer = "test-issuer",
-                Audience = "test-audience",
-                Key = "test-signing-key-for-unit-tests-only-1234567890",
-                ExpiresMinutes = 60,
-            }
-        );
-
-        var user = new User
-        {
-            Id = 3,
-            Username = "test-user",
-            PasswordHash = "not-a-real-hash",
-            Role = Roles.Customer,
-            CreatedAt = fixedNow,
-        };
+        var user = CreateUser();
 
         // Act
-        var result = new TokenService(options, timeProvider).CreateToken(user);
+        var result = CreateSut().CreateToken(CreateUser());
 
         output.WriteLine($"Token     = {result.Token}");
         output.WriteLine($"ExpiresAt = {result.ExpiresAt}");
@@ -46,6 +56,22 @@ public class TokenServiceTests(ITestOutputHelper output)
         output.WriteLine($"Payload   = {jwt.Payload.SerializeToJson()}");
 
         // Assert
-        Assert.Equal(fixedNow.AddMinutes(60), result.ExpiresAt);
+        Assert.Equal(FixedNow.AddMinutes(60), result.ExpiresAt);
+    }
+
+    [Fact]
+    public async Task CreateToken_PutsUserAndSettingsIntoToken()
+    {
+        // Act
+        var result = CreateSut().CreateToken(CreateUser());
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Token);
+
+        // Assert
+        Assert.Equal("3", jwt.Subject);
+        Assert.Equal(Roles.Customer, jwt.Claims.Single(c => c.Type == "role").Value);
+        Assert.Equal("test-issuer", jwt.Issuer);
+        Assert.Contains("test-audience", jwt.Audiences);
+        Assert.Equal(FixedNow.UtcDateTime, jwt.ValidFrom);
+        Assert.Equal(FixedNow.AddMinutes(60).UtcDateTime, jwt.ValidTo);
     }
 }
