@@ -34,6 +34,8 @@ builder
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 var app = builder.Build();
 
 await AdminBootstrapper.EnsureAdminAsync(app.Services);

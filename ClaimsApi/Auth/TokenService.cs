@@ -7,7 +7,7 @@ using JwtClaim = System.Security.Claims.Claim;
 
 namespace ClaimsApi.Auth;
 
-public class TokenService(IOptions<JwtOptions> options, TimeProvider timeProvider)
+public class TokenService(IOptions<JwtOptions> options, TimeProvider timeProvider) : ITokenService
 {
     private readonly JwtOptions _jwt = options.Value;
 
