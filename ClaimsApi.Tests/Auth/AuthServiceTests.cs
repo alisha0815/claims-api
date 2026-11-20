@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using ClaimsApi.Auth;
 using ClaimsApi.Data;
 using ClaimsApi.Dtos;
@@ -106,5 +107,37 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         Assert.Equal(RegisterStatus.UsernameTaken, result.Status);
         Assert.Null(result.Response);
         Assert.Equal(1, count);
+    }
+
+    // Login -success
+    [Fact]
+    public async Task LoginAsync_ReturnsToken_WhenPasswordIsCorrect()
+    {
+        // Arrange
+        // register "bob"
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        var registerResult = await arrangeService.RegisterAsync(ValidRegisterRequest("bob"));
+
+        var userId = registerResult.Response!.Id;
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+
+        var actService = CreateAuthService(actDb);
+
+        // Login
+        var result = await actService.LoginAsync(
+            new LoginRequest(" BOB ", Password),
+            CancellationToken.None
+        );
+
+        Assert.Equal(LoginStatus.Success, result.Status);
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Response!.AccessToken);
+
+        // Assert
+        Assert.Equal(userId.ToString(), jwt.Subject);
     }
 }
