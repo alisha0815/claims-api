@@ -64,5 +64,12 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(c => c.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<RefreshToken>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
