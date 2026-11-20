@@ -140,4 +140,48 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         // Assert
         Assert.Equal(userId.ToString(), jwt.Subject);
     }
+
+    // Login - invalid credentials
+    [Fact]
+    public async Task LoginAsync_ReturnsInvalidCredentials_WhenUserDoesNotExist()
+    {
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb);
+
+        // Login with "nobody"
+        var result = await actService.LoginAsync(
+            new LoginRequest("nobody", Password),
+            CancellationToken.None
+        );
+
+        // Assert
+        Assert.Equal(LoginStatus.InvalidCredentials, result.Status);
+        Assert.Null(result.Response);
+    }
+
+    [Fact]
+    public async Task LoginAsync_ReturnsInvalidCredentials_WhenPasswordIsWrong()
+    {
+        // Arrange
+        // register "bob"
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        await arrangeService.RegisterAsync(ValidRegisterRequest("bob"));
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb);
+
+        // Login with a wrong password
+        var result = await actService.LoginAsync(
+            new LoginRequest("bob", "wrong-password"),
+            CancellationToken.None
+        );
+
+        // Assert
+        Assert.Equal(LoginStatus.InvalidCredentials, result.Status);
+        Assert.Null(result.Response);
+    }
 }

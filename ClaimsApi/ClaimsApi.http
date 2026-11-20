@@ -178,3 +178,22 @@ Content-Type: application/json
   "username": "bob",
   "password": "bob-password"
 }
+
+### Login - wrong password (401)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "bob",
+  "password": "wrong-password"
+}
+
+### Login - unknown user (401)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "nobody",
+  "password": "bob-password"
+}
+

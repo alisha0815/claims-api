@@ -63,7 +63,7 @@ public class AuthService(
 
     public async Task<LoginResult> LoginAsync(
         LoginRequest request,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     )
     {
         var normalizedUsername = UsernameNormalizer.Normalize(request.Username);
@@ -75,16 +75,14 @@ public class AuthService(
 
         if (user is null)
         {
-            // TODO: return 401 instead of throwing
-            throw new InvalidOperationException("Invalid username or password.");
+            return new LoginResult(LoginStatus.InvalidCredentials, null);
         }
 
         var verifiedResult = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
 
         if (verifiedResult == PasswordVerificationResult.Failed)
         {
-            // TODO: return 401 instead of throwing
-            throw new InvalidOperationException("Invalid username or password.");
+            return new LoginResult(LoginStatus.InvalidCredentials, null);
         }
 
         var jwt = tokenService.CreateToken(user);
