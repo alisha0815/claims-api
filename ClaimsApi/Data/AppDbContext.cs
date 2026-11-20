@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
 
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -71,5 +73,7 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RefreshToken>().HasIndex(r => r.TokenHash).IsUnique();
     }
 }
