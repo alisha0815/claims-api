@@ -33,6 +33,9 @@ public class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("login")]
+    [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [AllowAnonymous]
     public async Task<ActionResult<LoginResponse>> Login(
         LoginRequest request,
@@ -40,6 +43,14 @@ public class AuthController(IAuthService authService) : ControllerBase
     )
     {
         var result = await authService.LoginAsync(request, cancellationToken);
+
+        if (result.Status == LoginStatus.InvalidCredentials)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Invalid username or password."
+            );
+        }
 
         return Ok(result.Response);
     }
