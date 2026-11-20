@@ -5,7 +5,10 @@ using ClaimsApi.Models;
 using ClaimsApi.Tests.Fixtures;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
+using Microsoft.VisualBasic;
+using Org.BouncyCastle.Asn1.Cms;
 
 namespace ClaimsApi.Tests.Auth;
 
@@ -19,8 +22,25 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
     private static RegisterRequest ValidRegisterRequest(string username) =>
         new(Username: username, Password: Password);
 
-    private AuthService CreateAuthService(AppDbContext db, FakeTimeProvider? timeProvider = null) =>
-        new(db, _hasher, timeProvider ?? new FakeTimeProvider(_fixedTime));
+    private AuthService CreateAuthService(AppDbContext db, FakeTimeProvider? timeProvider = null)
+    {
+        var clock = timeProvider ?? new FakeTimeProvider(_fixedTime);
+
+        var tokenService = new TokenService(
+            Options.Create(
+                new JwtOptions
+                {
+                    Issuer = "test-issuer",
+                    Audience = "test-audience",
+                    Key = "test-signing-key-for-unit-tests-only-1234567890",
+                    ExpiresMinutes = 60,
+                }
+            ),
+            clock
+        );
+
+        return new AuthService(db, _hasher, clock, tokenService);
+    }
 
     // RegisterAsync - success
     [Fact]
