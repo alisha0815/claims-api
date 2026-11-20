@@ -1,4 +1,9 @@
-@baseUrl = http://localhost:5175
+@local = http://localhost:5175
+@qa = https://claims-api-jungah-qa.azurewebsites.net
+@prod = https://claims-api-jungah-h3fre0dfd8asbeed.swedencentral-01.azurewebsites.net
+
+@baseUrl = {{local}}
+
 @nonExistentId = 999999
 @inReviewId = 2
 
