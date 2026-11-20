@@ -31,4 +31,16 @@ public class AuthController(IAuthService authService) : ControllerBase
 
         return StatusCode(StatusCodes.Status201Created, registerResponse.Response);
     }
+
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public async Task<ActionResult<LoginResponse>> Login(
+        LoginRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await authService.LoginAsync(request, cancellationToken);
+
+        return Ok(result.Response);
+    }
 }
