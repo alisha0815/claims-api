@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using ClaimsApi.Auth;
 using ClaimsApi.Data;
 using ClaimsApi.Dtos;
@@ -5,7 +6,10 @@ using ClaimsApi.Models;
 using ClaimsApi.Tests.Fixtures;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
+using Microsoft.VisualBasic;
+using Org.BouncyCastle.Asn1.Cms;
 
 namespace ClaimsApi.Tests.Auth;
 
@@ -19,8 +23,25 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
     private static RegisterRequest ValidRegisterRequest(string username) =>
         new(Username: username, Password: Password);
 
-    private AuthService CreateAuthService(AppDbContext db, FakeTimeProvider? timeProvider = null) =>
-        new(db, _hasher, timeProvider ?? new FakeTimeProvider(_fixedTime));
+    private AuthService CreateAuthService(AppDbContext db, FakeTimeProvider? timeProvider = null)
+    {
+        var clock = timeProvider ?? new FakeTimeProvider(_fixedTime);
+
+        var tokenService = new TokenService(
+            Options.Create(
+                new JwtOptions
+                {
+                    Issuer = "test-issuer",
+                    Audience = "test-audience",
+                    Key = "test-signing-key-for-unit-tests-only-1234567890",
+                    ExpiresMinutes = 60,
+                }
+            ),
+            clock
+        );
+
+        return new AuthService(db, _hasher, clock, tokenService);
+    }
 
     // RegisterAsync - success
     [Fact]
@@ -86,5 +107,37 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         Assert.Equal(RegisterStatus.UsernameTaken, result.Status);
         Assert.Null(result.Response);
         Assert.Equal(1, count);
+    }
+
+    // Login -success
+    [Fact]
+    public async Task LoginAsync_ReturnsToken_WhenPasswordIsCorrect()
+    {
+        // Arrange
+        // register "bob"
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        var registerResult = await arrangeService.RegisterAsync(ValidRegisterRequest("bob"));
+
+        var userId = registerResult.Response!.Id;
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+
+        var actService = CreateAuthService(actDb);
+
+        // Login
+        var result = await actService.LoginAsync(
+            new LoginRequest(" BOB ", Password),
+            CancellationToken.None
+        );
+
+        Assert.Equal(LoginStatus.Success, result.Status);
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Response!.AccessToken);
+
+        // Assert
+        Assert.Equal(userId.ToString(), jwt.Subject);
     }
 }

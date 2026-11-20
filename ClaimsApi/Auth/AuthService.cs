@@ -8,8 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClaimsApi.Auth;
 
-public class AuthService(AppDbContext db, IPasswordHasher<User> hasher, TimeProvider timeProvider)
-    : IAuthService
+public class AuthService(
+    AppDbContext db,
+    IPasswordHasher<User> hasher,
+    TimeProvider timeProvider,
+    ITokenService tokenService
+) : IAuthService
 {
     public async Task<RegisterResult> RegisterAsync(
         RegisterRequest request,
@@ -55,5 +59,36 @@ public class AuthService(AppDbContext db, IPasswordHasher<User> hasher, TimeProv
         }
 
         return new RegisterResult(RegisterStatus.Created, user.ToRegisterResponse());
+    }
+
+    public async Task<LoginResult> LoginAsync(
+        LoginRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var normalizedUsername = UsernameNormalizer.Normalize(request.Username);
+
+        var user = await db.Users.FirstOrDefaultAsync(
+            u => u.Username == normalizedUsername,
+            cancellationToken
+        );
+
+        if (user is null)
+        {
+            // TODO: return 401 instead of throwing
+            throw new InvalidOperationException("Invalid username or password.");
+        }
+
+        var verifiedResult = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+
+        if (verifiedResult == PasswordVerificationResult.Failed)
+        {
+            // TODO: return 401 instead of throwing
+            throw new InvalidOperationException("Invalid username or password.");
+        }
+
+        var jwt = tokenService.CreateToken(user);
+
+        return new LoginResult(LoginStatus.Success, new LoginResponse(jwt.Token, jwt.ExpiresAt));
     }
 }

@@ -8,4 +8,9 @@ public interface IAuthService
         RegisterRequest request,
         CancellationToken cancellationToken = default
     );
+
+    Task<LoginResult> LoginAsync(
+        LoginRequest request,
+        CancellationToken cancellationToken = default
+    );
 }

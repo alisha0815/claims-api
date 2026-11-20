@@ -169,3 +169,12 @@ Content-Type: application/json
   "username": "HTTP-BOB",
   "password": "bob-password"
 }
+
+### Login - success(200)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "bob",
+  "password": "bob-password"
+}
