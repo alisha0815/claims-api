@@ -15,6 +15,22 @@ public class AuthService(
     ITokenService tokenService
 ) : IAuthService
 {
+    private string IssueRefreshToken(int userId)
+    {
+        var issued = tokenService.CreateRefreshToken();
+
+        var entity = new RefreshToken
+        {
+            UserId = userId,
+            TokenHash = RefreshTokenHasher.Hash(issued.Token),
+            ExpiresAt = issued.ExpiresAt,
+        };
+
+        db.RefreshTokens.Add(entity);
+
+        return issued.Token;
+    }
+
     public async Task<RegisterResult> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default
@@ -87,22 +103,13 @@ public class AuthService(
 
         var jwt = tokenService.CreateToken(user);
 
-        var issuedRefreshToken = tokenService.CreateRefreshToken();
-
-        var refreshToken = new RefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = RefreshTokenHasher.Hash(issuedRefreshToken.Token),
-            ExpiresAt = issuedRefreshToken.ExpiresAt,
-        };
-
-        db.RefreshTokens.Add(refreshToken);
+        var issuedRefreshToken = IssueRefreshToken(user.Id);
 
         await db.SaveChangesAsync(cancellationToken);
 
         return new LoginResult(
             LoginStatus.Success,
-            new LoginResponse(jwt.Token, jwt.ExpiresAt, issuedRefreshToken.Token)
+            new LoginResponse(jwt.Token, jwt.ExpiresAt, issuedRefreshToken)
         );
     }
 
@@ -133,17 +140,7 @@ public class AuthService(
 
         var user = await db.Users.FirstAsync(u => u.Id == found.UserId, cancellationToken);
 
-        // create a new RT and add the hashed entity
-        var newRefreshToken = tokenService.CreateRefreshToken();
-
-        var refreshToken = new RefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = RefreshTokenHasher.Hash(newRefreshToken.Token),
-            ExpiresAt = newRefreshToken.ExpiresAt,
-        };
-
-        db.RefreshTokens.Add(refreshToken);
+        var issuedRefreshToken = IssueRefreshToken(user.Id);
 
         // create a new AT
         var jwt = tokenService.CreateToken(user);
@@ -154,7 +151,7 @@ public class AuthService(
         // return success with LoginResponse
         return new RefreshResult(
             RefreshStatus.Success,
-            new LoginResponse(jwt.Token, jwt.ExpiresAt, newRefreshToken.Token)
+            new LoginResponse(jwt.Token, jwt.ExpiresAt, issuedRefreshToken)
         );
     }
 }
