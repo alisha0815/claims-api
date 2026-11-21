@@ -1,3 +1,4 @@
+using System.ComponentModel.Design.Serialization;
 using System.IdentityModel.Tokens.Jwt;
 using ClaimsApi.Auth;
 using ClaimsApi.Data;
@@ -225,5 +226,40 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         Assert.Equal(RefreshTokenHasher.Hash(refreshToken), saved.TokenHash);
         Assert.Equal(_fixedTime.AddDays(RefreshTokenDays), saved.ExpiresAt);
         Assert.Null(saved.RevokedAt);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ReturnsNewTokens_WhenRefreshTokenIsValid()
+    {
+        // Arrange
+        // register
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        await arrangeService.RegisterAsync(ValidRegisterRequest("miranda"), CancellationToken.None);
+
+        // login
+        var login = await arrangeService.LoginAsync(
+            new LoginRequest("miranda", Password),
+            CancellationToken.None
+        );
+
+        var oldRefreshToken = login.Response!.RefreshToken;
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb);
+
+        var result = await actService.RefreshAsync(
+            new RefreshRequest(oldRefreshToken),
+            CancellationToken.None
+        );
+
+        // Assert
+        Assert.Equal(RefreshStatus.Success, result.Status);
+
+        var response = result.Response!;
+        Assert.NotEqual(oldRefreshToken, response.RefreshToken);
+        Assert.False(string.IsNullOrEmpty(response.AccessToken));
     }
 }
