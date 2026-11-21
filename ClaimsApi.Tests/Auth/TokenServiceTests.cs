@@ -13,6 +13,9 @@ public class TokenServiceTests(ITestOutputHelper output)
 
     private const string PasswordHash = "not-a-real-hash";
 
+    private const int RefreshTokenDays = 7;
+    private const int ExpiresMinutes = 60;
+
     private static TokenService CreateSut() =>
         new(
             Options.Create(
@@ -21,7 +24,8 @@ public class TokenServiceTests(ITestOutputHelper output)
                     Issuer = "test-issuer",
                     Audience = "test-audience",
                     Key = "test-signing-key-for-unit-tests-only-1234567890",
-                    ExpiresMinutes = 60,
+                    ExpiresMinutes = ExpiresMinutes,
+                    RefreshTokenDays = RefreshTokenDays,
                 }
             ),
             new FakeTimeProvider(FixedNow)
@@ -89,5 +93,18 @@ public class TokenServiceTests(ITestOutputHelper output)
 
         // Assert
         Assert.DoesNotContain(PasswordHash, payloadJson);
+    }
+
+    [Fact]
+    public void CreateRefreshToken_SetsExpiresAt_ToNowPlusRefreshTokenDays()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        var refreshToken = sut.CreateRefreshToken();
+
+        // Assert
+        Assert.Equal(FixedNow.AddDays(RefreshTokenDays), refreshToken.ExpiresAt);
     }
 }

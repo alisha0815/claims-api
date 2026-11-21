@@ -8,14 +8,16 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
-using Microsoft.VisualBasic;
-using Org.BouncyCastle.Asn1.Cms;
 
 namespace ClaimsApi.Tests.Auth;
 
 public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private const string Password = "password";
+
+    private const int RefreshTokenDays = 7;
+    private const int ExpiresMinutes = 60;
+
     private readonly DateTimeOffset _fixedTime = new(2026, 11, 1, 10, 30, 0, TimeSpan.Zero);
 
     private readonly PasswordHasher<User> _hasher = new();
@@ -34,7 +36,8 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
                     Issuer = "test-issuer",
                     Audience = "test-audience",
                     Key = "test-signing-key-for-unit-tests-only-1234567890",
-                    ExpiresMinutes = 60,
+                    ExpiresMinutes = ExpiresMinutes,
+                    RefreshTokenDays = RefreshTokenDays,
                 }
             ),
             clock
@@ -183,5 +186,44 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         // Assert
         Assert.Equal(LoginStatus.InvalidCredentials, result.Status);
         Assert.Null(result.Response);
+    }
+
+    [Fact]
+    public async Task LoginAsync_StoresRefreshTokenHash_WhenPasswordIsCorrect()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        var registered = await arrangeService.RegisterAsync(
+            ValidRegisterRequest("carol"),
+            CancellationToken.None
+        );
+        var userId = registered.Response!.Id;
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb);
+
+        // Login with a correct password
+        var result = await actService.LoginAsync(
+            new LoginRequest("carol", Password),
+            CancellationToken.None
+        );
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+
+        var saved = await assertDb.RefreshTokens.SingleAsync(
+            t => t.UserId == userId,
+            CancellationToken.None
+        );
+
+        var refreshToken = result.Response!.RefreshToken;
+
+        Assert.NotEqual(refreshToken, saved.TokenHash);
+        Assert.Equal(RefreshTokenHasher.Hash(refreshToken), saved.TokenHash);
+        Assert.Equal(_fixedTime.AddDays(RefreshTokenDays), saved.ExpiresAt);
+        Assert.Null(saved.RevokedAt);
     }
 }

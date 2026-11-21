@@ -19,4 +19,7 @@ public class JwtOptions
     // Access tokens stay short-lived, refresh tokens handle longer sessions.
     [Range(1, 120, ErrorMessage = "Jwt:ExpiresMinutes must be 1-120 minutes.")]
     public int ExpiresMinutes { get; set; }
+
+    [Range(1, 30, ErrorMessage = "Jwt:RefreshTokenDays must be 1-30 days.")]
+    public int RefreshTokenDays { get; set; }
 }
