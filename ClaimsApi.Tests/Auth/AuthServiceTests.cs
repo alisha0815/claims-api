@@ -1,3 +1,4 @@
+using System.ComponentModel.Design.Serialization;
 using System.IdentityModel.Tokens.Jwt;
 using ClaimsApi.Auth;
 using ClaimsApi.Data;
@@ -225,5 +226,116 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         Assert.Equal(RefreshTokenHasher.Hash(refreshToken), saved.TokenHash);
         Assert.Equal(_fixedTime.AddDays(RefreshTokenDays), saved.ExpiresAt);
         Assert.Null(saved.RevokedAt);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ReturnsNewTokens_WhenRefreshTokenIsValid()
+    {
+        // Arrange
+        // register
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        await arrangeService.RegisterAsync(ValidRegisterRequest("miranda"), CancellationToken.None);
+
+        // login
+        var login = await arrangeService.LoginAsync(
+            new LoginRequest("miranda", Password),
+            CancellationToken.None
+        );
+
+        var oldRefreshToken = login.Response!.RefreshToken;
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb);
+
+        var result = await actService.RefreshAsync(
+            new RefreshRequest(oldRefreshToken),
+            CancellationToken.None
+        );
+
+        // Assert
+        Assert.Equal(RefreshStatus.Success, result.Status);
+
+        var response = result.Response!;
+        Assert.NotEqual(oldRefreshToken, response.RefreshToken);
+        Assert.False(string.IsNullOrEmpty(response.AccessToken));
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ReturnsInvalid_WhenRefreshTokenIsExpired()
+    {
+        // Arrange
+        // register
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Move past the 7-day refresh token lifetime
+        var clock = new FakeTimeProvider(_fixedTime);
+        var arrangeService = CreateAuthService(arrangeDb, clock);
+
+        await arrangeService.RegisterAsync(ValidRegisterRequest("nina"), CancellationToken.None);
+
+        // login
+        var login = await arrangeService.LoginAsync(
+            new LoginRequest("nina", Password),
+            CancellationToken.None
+        );
+
+        var oldRefreshToken = login.Response!.RefreshToken;
+
+        clock.Advance(TimeSpan.FromDays(8));
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb, clock);
+
+        var result = await actService.RefreshAsync(
+            new RefreshRequest(oldRefreshToken),
+            CancellationToken.None
+        );
+
+        // Assert
+        Assert.Equal(RefreshStatus.Invalid, result.Status);
+        Assert.Null(result.Response);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ReturnsInvalid_WhenRefreshTokenIsReused()
+    {
+        // Arrange
+        // register
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        await arrangeService.RegisterAsync(ValidRegisterRequest("jan"), CancellationToken.None);
+
+        // login
+        var login = await arrangeService.LoginAsync(
+            new LoginRequest("jan", Password),
+            CancellationToken.None
+        );
+
+        var oldRefreshToken = login.Response!.RefreshToken;
+
+        // First use: rotates and revokes oldRefreshToken
+        await arrangeService.RefreshAsync(
+            new RefreshRequest(oldRefreshToken),
+            CancellationToken.None
+        );
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb);
+
+        // reuse the old refreshToken
+        var result = await actService.RefreshAsync(
+            new RefreshRequest(oldRefreshToken),
+            CancellationToken.None
+        );
+
+        // Assert
+        Assert.Equal(RefreshStatus.Invalid, result.Status);
+        Assert.Null(result.Response);
     }
 }

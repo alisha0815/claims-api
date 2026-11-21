@@ -176,6 +176,7 @@ Content-Type: application/json
 }
 
 ### Login - success(200)
+# @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -200,5 +201,13 @@ Content-Type: application/json
 {
   "username": "nobody",
   "password": "bob-password"
+}
+
+### Refresh
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.refreshToken}}"
 }
 
