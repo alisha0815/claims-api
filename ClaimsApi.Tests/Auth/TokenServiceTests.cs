@@ -94,4 +94,17 @@ public class TokenServiceTests(ITestOutputHelper output)
         // Assert
         Assert.DoesNotContain(PasswordHash, payloadJson);
     }
+
+    [Fact]
+    public void CreateRefreshToken_SetsExpiresAt_ToNowPlusRefreshTokenDays()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        var refreshToken = sut.CreateRefreshToken();
+
+        // Assert
+        Assert.Equal(FixedNow.AddDays(RefreshTokenDays), refreshToken.ExpiresAt);
+    }
 }
