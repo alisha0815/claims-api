@@ -145,7 +145,7 @@ public class AuthService(
 
         var user = await db.Users.FirstAsync(u => u.Id == found.UserId, cancellationToken);
 
-        var issuedRefreshToken = IssueRefreshToken(user.Id);
+        var newRefreshToken = IssueRefreshToken(user.Id);
 
         // create a new AT
         var jwt = tokenService.CreateToken(user);
@@ -156,7 +156,7 @@ public class AuthService(
         // return success with LoginResponse
         return new RefreshResult(
             RefreshStatus.Success,
-            new LoginResponse(jwt.Token, jwt.ExpiresAt, issuedRefreshToken)
+            new LoginResponse(jwt.Token, jwt.ExpiresAt, newRefreshToken)
         );
     }
 
