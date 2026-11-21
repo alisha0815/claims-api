@@ -154,4 +154,32 @@ public class AuthService(
             new LoginResponse(jwt.Token, jwt.ExpiresAt, issuedRefreshToken)
         );
     }
+
+    public async Task LogoutAsync(
+        RefreshRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // hash request.RefreshToken
+        var hashedRefreshToken = RefreshTokenHasher.Hash(request.RefreshToken);
+
+        // find the hashed request.RefreshToken in the DB
+        var found = await db.RefreshTokens.FirstOrDefaultAsync(
+            r => r.TokenHash == hashedRefreshToken,
+            cancellationToken
+        );
+
+        var now = timeProvider.GetUtcNow();
+
+        // Nothing to revoke: still a successful logout (always 204)
+        if (found is null || found.ExpiresAt <= now || found.RevokedAt is not null)
+        {
+            return;
+        }
+
+        // Logout: this refresh token can no longer be used.
+        found.RevokedAt = now;
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
 }
