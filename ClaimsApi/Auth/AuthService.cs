@@ -105,4 +105,56 @@ public class AuthService(
             new LoginResponse(jwt.Token, jwt.ExpiresAt, issuedRefreshToken.Token)
         );
     }
+
+    public async Task<RefreshResult> RefreshAsync(
+        RefreshRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // hash request.RefreshToken
+        var hashedRefreshToken = RefreshTokenHasher.Hash(request.RefreshToken);
+
+        // find the hashed request.RefreshToken in the DB
+        var found = await db.RefreshTokens.FirstOrDefaultAsync(
+            r => r.TokenHash == hashedRefreshToken,
+            cancellationToken
+        );
+
+        var now = timeProvider.GetUtcNow();
+
+        // if not found, expired or revoked, return Invalid
+        if (found is null || found.ExpiresAt <= now || found.RevokedAt is not null)
+        {
+            return new RefreshResult(RefreshStatus.Invalid, null);
+        }
+
+        // Rotation: a refresh token can be used only once.
+        found.RevokedAt = now;
+
+        var user = await db.Users.FirstAsync(u => u.Id == found.UserId, cancellationToken);
+
+        // create a new RT and add the hashed entity
+        var newRefreshToken = tokenService.CreateRefreshToken();
+
+        var refreshToken = new RefreshToken
+        {
+            UserId = user.Id,
+            TokenHash = RefreshTokenHasher.Hash(newRefreshToken.Token),
+            ExpiresAt = newRefreshToken.ExpiresAt,
+        };
+
+        db.RefreshTokens.Add(refreshToken);
+
+        // create a new AT
+        var jwt = tokenService.CreateToken(user);
+
+        // save
+        await db.SaveChangesAsync(cancellationToken);
+
+        // return success with LoginResponse
+        return new RefreshResult(
+            RefreshStatus.Success,
+            new LoginResponse(jwt.Token, jwt.ExpiresAt, newRefreshToken.Token)
+        );
+    }
 }
