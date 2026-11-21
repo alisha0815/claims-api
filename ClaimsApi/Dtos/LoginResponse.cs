@@ -1,3 +1,3 @@
 namespace ClaimsApi.Dtos;
 
-public record LoginResponse(string AccessToken, DateTimeOffset ExpiresAt);
+public record LoginResponse(string AccessToken, DateTimeOffset ExpiresAt, string RefreshToken);

@@ -87,6 +87,22 @@ public class AuthService(
 
         var jwt = tokenService.CreateToken(user);
 
-        return new LoginResult(LoginStatus.Success, new LoginResponse(jwt.Token, jwt.ExpiresAt));
+        var issuedRefreshToken = tokenService.CreateRefreshToken();
+
+        var refreshToken = new RefreshToken
+        {
+            UserId = user.Id,
+            TokenHash = RefreshTokenHasher.Hash(issuedRefreshToken.Token),
+            ExpiresAt = issuedRefreshToken.ExpiresAt,
+        };
+
+        db.RefreshTokens.Add(refreshToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new LoginResult(
+            LoginStatus.Success,
+            new LoginResponse(jwt.Token, jwt.ExpiresAt, issuedRefreshToken.Token)
+        );
     }
 }

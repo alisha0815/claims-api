@@ -38,4 +38,15 @@ public class TokenService(IOptions<JwtOptions> options, TimeProvider timeProvide
 
         return new AccessToken(tokenString, expiresAt);
     }
+
+    public IssuedRefreshToken CreateRefreshToken()
+    {
+        var refreshToken = RefreshTokenHasher.Generate();
+
+        var now = timeProvider.GetUtcNow();
+
+        var expiresAt = now.AddDays(_jwt.RefreshTokenDays);
+
+        return new IssuedRefreshToken(refreshToken, expiresAt);
+    }
 }

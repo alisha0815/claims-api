@@ -8,14 +8,16 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
-using Microsoft.VisualBasic;
-using Org.BouncyCastle.Asn1.Cms;
 
 namespace ClaimsApi.Tests.Auth;
 
 public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private const string Password = "password";
+
+    private const int RefreshTokenDays = 7;
+    private const int ExpiresMinutes = 60;
+
     private readonly DateTimeOffset _fixedTime = new(2026, 11, 1, 10, 30, 0, TimeSpan.Zero);
 
     private readonly PasswordHasher<User> _hasher = new();
@@ -34,7 +36,8 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
                     Issuer = "test-issuer",
                     Audience = "test-audience",
                     Key = "test-signing-key-for-unit-tests-only-1234567890",
-                    ExpiresMinutes = 60,
+                    ExpiresMinutes = ExpiresMinutes,
+                    RefreshTokenDays = RefreshTokenDays,
                 }
             ),
             clock
