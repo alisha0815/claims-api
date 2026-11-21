@@ -31,6 +31,19 @@ public class AuthService(
         return issued.Token;
     }
 
+    private async Task<RefreshToken?> FindRefreshTokenAsync(
+        string token,
+        CancellationToken cancellationToken
+    )
+    {
+        var hashedRefreshToken = RefreshTokenHasher.Hash(token);
+
+        return await db.RefreshTokens.FirstOrDefaultAsync(
+            r => r.TokenHash == hashedRefreshToken,
+            cancellationToken
+        );
+    }
+
     public async Task<RegisterResult> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default
@@ -118,18 +131,10 @@ public class AuthService(
         CancellationToken cancellationToken = default
     )
     {
-        // hash request.RefreshToken
-        var hashedRefreshToken = RefreshTokenHasher.Hash(request.RefreshToken);
-
-        // find the hashed request.RefreshToken in the DB
-        var found = await db.RefreshTokens.FirstOrDefaultAsync(
-            r => r.TokenHash == hashedRefreshToken,
-            cancellationToken
-        );
+        var found = await FindRefreshTokenAsync(request.RefreshToken, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
 
-        // if not found, expired or revoked, return Invalid
         if (found is null || found.ExpiresAt <= now || found.RevokedAt is not null)
         {
             return new RefreshResult(RefreshStatus.Invalid, null);
@@ -140,7 +145,7 @@ public class AuthService(
 
         var user = await db.Users.FirstAsync(u => u.Id == found.UserId, cancellationToken);
 
-        var issuedRefreshToken = IssueRefreshToken(user.Id);
+        var newRefreshToken = IssueRefreshToken(user.Id);
 
         // create a new AT
         var jwt = tokenService.CreateToken(user);
@@ -151,7 +156,28 @@ public class AuthService(
         // return success with LoginResponse
         return new RefreshResult(
             RefreshStatus.Success,
-            new LoginResponse(jwt.Token, jwt.ExpiresAt, issuedRefreshToken)
+            new LoginResponse(jwt.Token, jwt.ExpiresAt, newRefreshToken)
         );
+    }
+
+    public async Task LogoutAsync(
+        RefreshRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var found = await FindRefreshTokenAsync(request.RefreshToken, cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+
+        // Nothing to revoke: still a successful logout (always 204)
+        if (found is null || found.ExpiresAt <= now || found.RevokedAt is not null)
+        {
+            return;
+        }
+
+        // Logout: this refresh token can no longer be used.
+        found.RevokedAt = now;
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

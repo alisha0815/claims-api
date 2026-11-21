@@ -338,4 +338,40 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         Assert.Equal(RefreshStatus.Invalid, result.Status);
         Assert.Null(result.Response);
     }
+
+    [Fact]
+    public async Task LogoutAsync_RevokesRefreshToken_WhenTokenIsValid()
+    {
+        // Arrange
+        // register
+        await using var arrangeDb = fixture.CreateDbContext();
+        var arrangeService = CreateAuthService(arrangeDb);
+
+        await arrangeService.RegisterAsync(ValidRegisterRequest("tom"), CancellationToken.None);
+
+        // login
+        var login = await arrangeService.LoginAsync(
+            new LoginRequest("tom", Password),
+            CancellationToken.None
+        );
+
+        var oldRefreshToken = login.Response!.RefreshToken;
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb);
+
+        // logout
+        await actService.LogoutAsync(new RefreshRequest(oldRefreshToken), CancellationToken.None);
+
+        // Assert
+        await using var assertDb = fixture.CreateDbContext();
+
+        var result = await assertDb.RefreshTokens.SingleAsync(
+            r => r.TokenHash == RefreshTokenHasher.Hash(oldRefreshToken),
+            CancellationToken.None
+        );
+
+        Assert.Equal(_fixedTime, result.RevokedAt);
+    }
 }
