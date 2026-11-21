@@ -54,4 +54,27 @@ public class AuthController(IAuthService authService) : ControllerBase
 
         return Ok(result.Response);
     }
+
+    [HttpPost("refresh")]
+    [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [AllowAnonymous]
+    public async Task<ActionResult<LoginResponse>> Refresh(
+        RefreshRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await authService.RefreshAsync(request, cancellationToken);
+
+        if (result.Status == RefreshStatus.Invalid)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Invalid or expired refresh token."
+            );
+        }
+
+        return Ok(result.Response);
+    }
 }
