@@ -77,4 +77,17 @@ public class AuthController(IAuthService authService) : ControllerBase
 
         return Ok(result.Response);
     }
+
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [AllowAnonymous]
+    public async Task<ActionResult> Logout(
+        RefreshRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        await authService.LogoutAsync(request, cancellationToken);
+
+        return NoContent();
+    }
 }
