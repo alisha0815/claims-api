@@ -31,6 +31,19 @@ public class AuthService(
         return issued.Token;
     }
 
+    private async Task<RefreshToken?> FindRefreshTokenAsync(
+        string token,
+        CancellationToken cancellationToken
+    )
+    {
+        var hashedRefreshToken = RefreshTokenHasher.Hash(token);
+
+        return await db.RefreshTokens.FirstOrDefaultAsync(
+            r => r.TokenHash == hashedRefreshToken,
+            cancellationToken
+        );
+    }
+
     public async Task<RegisterResult> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default
@@ -118,18 +131,10 @@ public class AuthService(
         CancellationToken cancellationToken = default
     )
     {
-        // hash request.RefreshToken
-        var hashedRefreshToken = RefreshTokenHasher.Hash(request.RefreshToken);
-
-        // find the hashed request.RefreshToken in the DB
-        var found = await db.RefreshTokens.FirstOrDefaultAsync(
-            r => r.TokenHash == hashedRefreshToken,
-            cancellationToken
-        );
+        var found = await FindRefreshTokenAsync(request.RefreshToken, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
 
-        // if not found, expired or revoked, return Invalid
         if (found is null || found.ExpiresAt <= now || found.RevokedAt is not null)
         {
             return new RefreshResult(RefreshStatus.Invalid, null);
@@ -160,14 +165,7 @@ public class AuthService(
         CancellationToken cancellationToken = default
     )
     {
-        // hash request.RefreshToken
-        var hashedRefreshToken = RefreshTokenHasher.Hash(request.RefreshToken);
-
-        // find the hashed request.RefreshToken in the DB
-        var found = await db.RefreshTokens.FirstOrDefaultAsync(
-            r => r.TokenHash == hashedRefreshToken,
-            cancellationToken
-        );
+        var found = await FindRefreshTokenAsync(request.RefreshToken, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
 
