@@ -262,4 +262,41 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         Assert.NotEqual(oldRefreshToken, response.RefreshToken);
         Assert.False(string.IsNullOrEmpty(response.AccessToken));
     }
+
+    [Fact]
+    public async Task RefreshAsync_ReturnsInvalid_WhenRefreshTokenIsExpired()
+    {
+        // Arrange
+        // register
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Move past the 7-day refresh token lifetime
+        var clock = new FakeTimeProvider(_fixedTime);
+        var arrangeService = CreateAuthService(arrangeDb, clock);
+
+        await arrangeService.RegisterAsync(ValidRegisterRequest("nina"), CancellationToken.None);
+
+        // login
+        var login = await arrangeService.LoginAsync(
+            new LoginRequest("nina", Password),
+            CancellationToken.None
+        );
+
+        var oldRefreshToken = login.Response!.RefreshToken;
+
+        clock.Advance(TimeSpan.FromDays(8));
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAuthService(actDb, clock);
+
+        var result = await actService.RefreshAsync(
+            new RefreshRequest(oldRefreshToken),
+            CancellationToken.None
+        );
+
+        // Assert
+        Assert.Equal(RefreshStatus.Invalid, result.Status);
+        Assert.Null(result.Response);
+    }
 }
