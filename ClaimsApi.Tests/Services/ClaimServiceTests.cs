@@ -492,4 +492,36 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         Assert.Equal(myClaim.Id, claim.Id);
     }
+
+    [Fact]
+    public async Task GetByIdAsync_OtherCustomersClaim_ReturnsNull()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create other customer
+        var otherCustomer = new User
+        {
+            Username = $"other-{Guid.NewGuid()}",
+            PasswordHash = "not-a-real-hash",
+            Role = Roles.Customer,
+            CreatedAt = _fixedTime,
+        };
+
+        arrangeDb.Users.Add(otherCustomer);
+        await arrangeDb.SaveChangesAsync();
+
+        var arrangeService = CreateService(arrangeDb);
+
+        var claim = await arrangeService.CreateAsync(otherCustomer.Id, ValidRequest());
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.GetByIdAsync(claim.Id, SeededCustomerId);
+
+        // Assert
+        Assert.Null(result);
+    }
 }
