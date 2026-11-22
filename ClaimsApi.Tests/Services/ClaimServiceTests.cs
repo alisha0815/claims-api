@@ -1,3 +1,4 @@
+using ClaimsApi.Auth;
 using ClaimsApi.Data;
 using ClaimsApi.Dtos;
 using ClaimsApi.Models;
@@ -453,5 +454,42 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Assert
         Assert.Equal(UpdateClaimStatusResult.NotFound, result);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_OtherCustomerHasClaims_ReturnsOnlyOwnClaims()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        await arrangeDb.Claims.ExecuteDeleteAsync();
+
+        // Create other customer
+        var otherCustomer = new User
+        {
+            Username = $"other-{Guid.NewGuid()}",
+            PasswordHash = "not-a-real-hash",
+            Role = Roles.Customer,
+            CreatedAt = _fixedTime,
+        };
+
+        arrangeDb.Users.Add(otherCustomer);
+        await arrangeDb.SaveChangesAsync();
+
+        var arrangeService = CreateService(arrangeDb);
+
+        // One claim for me, one for the other customer
+        var myClaim = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
+        await arrangeService.CreateAsync(otherCustomer.Id, ValidRequest());
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.GetAllAsync(SeededCustomerId);
+
+        // Assert
+        var claim = Assert.Single(result);
+
+        Assert.Equal(myClaim.Id, claim.Id);
     }
 }
