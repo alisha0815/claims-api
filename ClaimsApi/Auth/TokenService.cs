@@ -18,8 +18,9 @@ public class TokenService(IOptions<JwtOptions> options, TimeProvider timeProvide
 
         var sub = new JwtClaim(JwtRegisteredClaimNames.Sub, user.Id.ToString());
         var role = new JwtClaim("role", user.Role);
+        var userName = new JwtClaim(JwtRegisteredClaimNames.UniqueName, user.Username);
 
-        JwtClaim[] claims = [sub, role];
+        JwtClaim[] claims = [sub, role, userName];
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
 
