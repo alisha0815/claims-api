@@ -97,7 +97,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         var actService = CreateService(actDb);
 
         // Act
-        var result = await actService.GetByIdAsync(created.Id);
+        var result = await actService.GetByIdAsync(created.Id, SeededCustomerId);
 
         // Assert
         Assert.NotNull(result);
@@ -113,7 +113,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         const int nonExistentId = int.MaxValue;
 
         // Act
-        var result = await service.GetByIdAsync(nonExistentId);
+        var result = await service.GetByIdAsync(nonExistentId, SeededCustomerId);
 
         // Assert
         Assert.Null(result);
@@ -240,7 +240,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
-        var updated = await CreateService(assertDb).GetByIdAsync(id);
+        var updated = await CreateService(assertDb).GetByIdAsync(id, SeededCustomerId);
 
         Assert.Equal(UpdateClaimResult.Updated, result);
         Assert.NotNull(updated);
@@ -276,7 +276,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
-        var stored = await CreateService(assertDb).GetByIdAsync(id);
+        var stored = await CreateService(assertDb).GetByIdAsync(id, SeededCustomerId);
 
         Assert.Equal(UpdateClaimResult.NotEditable, result);
         Assert.NotNull(stored);
@@ -322,7 +322,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var assertDb = fixture.CreateDbContext();
         var assertService = CreateService(assertDb);
 
-        var stored = await assertService.GetByIdAsync(idToDelete);
+        var stored = await assertService.GetByIdAsync(idToDelete, SeededCustomerId);
 
         Assert.Equal(DeleteClaimResult.Deleted, result);
         Assert.Null(stored);
@@ -355,7 +355,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var assertDb = fixture.CreateDbContext();
         var assertService = CreateService(assertDb);
 
-        var stored = await assertService.GetByIdAsync(id);
+        var stored = await assertService.GetByIdAsync(id, SeededCustomerId);
 
         Assert.Equal(DeleteClaimResult.NotDeletable, result);
         Assert.NotNull(stored);
@@ -401,7 +401,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var assertDb = fixture.CreateDbContext();
         var assertService = CreateService(assertDb);
 
-        var stored = await assertService.GetByIdAsync(id);
+        var stored = await assertService.GetByIdAsync(id, SeededCustomerId);
 
         Assert.Equal(UpdateClaimStatusResult.Updated, result);
         Assert.NotNull(stored);
@@ -431,7 +431,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var assertDb = fixture.CreateDbContext();
         var assertService = CreateService(assertDb);
 
-        var stored = await assertService.GetByIdAsync(id);
+        var stored = await assertService.GetByIdAsync(id, SeededCustomerId);
 
         Assert.Equal(UpdateClaimStatusResult.InvalidTransition, result);
         Assert.NotNull(stored);
