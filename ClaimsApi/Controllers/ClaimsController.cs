@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Claims;
 using ClaimsApi.Dtos;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
@@ -18,8 +19,11 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        // TODO: replace with authenticated user
-        var customerId = 1;
+        var userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("Missing user id");
+
+        var customerId = int.Parse(userIdValue);
 
         var claimResponse = await claimService.CreateAsync(customerId, request, cancellationToken);
 
