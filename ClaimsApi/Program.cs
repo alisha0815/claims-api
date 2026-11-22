@@ -1,10 +1,13 @@
+using System.Text;
 using ClaimsApi.Auth;
 using ClaimsApi.Data;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
 using EntityFramework.Exceptions.PostgreSQL;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +37,35 @@ builder
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+var jwt =
+    builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+    ?? throw new InvalidOperationException(
+        $"Missing '{JwtOptions.SectionName}' configuration section"
+    );
+
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
+
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Issuer,
+
+            ValidateAudience = true,
+            ValidAudience = jwt.Audience,
+
+            ValidateLifetime = true,
+            // Tokens are issued and validated by this same app, so no clock drift to absorb.
+            ClockSkew = TimeSpan.Zero,
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddScoped<ITokenService, TokenService>();
 
 var app = builder.Build();
@@ -41,16 +73,16 @@ var app = builder.Build();
 await AdminBootstrapper.EnsureAdminAsync(app.Services);
 
 app.UseExceptionHandler();
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapOpenApi();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
 });
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 

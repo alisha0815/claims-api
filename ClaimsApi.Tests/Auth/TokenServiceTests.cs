@@ -73,6 +73,7 @@ public class TokenServiceTests(ITestOutputHelper output)
         // Assert
         Assert.Equal("3", jwt.Subject);
         Assert.Equal(Roles.Customer, jwt.Claims.Single(c => c.Type == "role").Value);
+        Assert.Equal("test-user", jwt.Claims.Single(c => c.Type == "unique_name").Value);
         Assert.Equal("test-issuer", jwt.Issuer);
         Assert.Contains("test-audience", jwt.Audiences);
         Assert.Equal(FixedNow.UtcDateTime, jwt.ValidFrom);
