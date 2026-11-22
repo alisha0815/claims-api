@@ -5,6 +5,7 @@ using ClaimsApi.Models;
 using ClaimsApi.Services;
 using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -64,7 +65,9 @@ builder
         };
     });
 
-builder.Services.AddAuthorization();
+builder
+    .Services.AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 
@@ -78,7 +81,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapOpenApi();
+app.MapOpenApi().AllowAnonymous();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
@@ -86,6 +89,6 @@ app.UseSwaggerUI(options =>
 
 app.MapControllers();
 
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Run();

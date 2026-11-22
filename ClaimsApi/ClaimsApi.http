@@ -4,139 +4,10 @@
 
 @baseUrl = {{local}}
 
+@token={{login.response.body.accessToken}}
+
 @nonExistentId = 999999
 @inReviewId = 2
-
-### Create claim - success (201)
-# @name createClaim
-POST {{baseUrl}}/api/claims
-Content-Type: application/json
-
-{
-  "policyNumber": "TRV-2026-118734",
-  "title": "Suitcase wheels broken on arrival",
-  "description": "Damaged on OSLO-ICN flight",
-  "amount": 2500,
-  "incidentDate": "2026-11-02"
-}
-
-
-### Create claim - validation error (400)
-POST {{baseUrl}}/api/claims
-Content-Type: application/json
-
-{
-  "policyNumber": "TRV-2026-118734",
-  "title": "Invalid claim example",
-  "description": "Amount is zero and incident date is in the future",
-  "amount": 0,
-  "incidentDate": "2030-01-01"
-}
-
-### Get claim by Id - success (200)
-GET {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
-
-### Get claim by Id - not found error (404)
-GET {{baseUrl}}/api/claims/{{nonExistentId}}
-
-### Get all claims - success (200)
-GET {{baseUrl}}/api/claims
-
-### List claims - filter by Approved (200)
-GET {{baseUrl}}/api/claims?status=Approved
-
-### List claims - invalid status (400)
-GET {{baseUrl}}/api/claims?status=Pending
-
-# PUT /api/claims/{id} - Update claim
-
-### Update claim - success (204)
-PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
-Content-Type: application/json
-
-{
-  "title": "Suitcase wheels and handle broken on arrival",
-  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
-  "amount": 3200,
-  "incidentDate": "2026-11-01"
-}
-
-### Update claim - validation error (400)
-PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
-Content-Type: application/json
-
-{
-  "title": "",
-  "description": "Damaged on OSLO-ICN flight",
-  "amount": 0,
-  "incidentDate": "2030-01-01"
-}
-
-### Update claim - not found (404)
-PUT {{baseUrl}}/api/claims/{{nonExistentId}}
-Content-Type: application/json
-
-{
-  "title": "Suitcase wheels and handle broken on arrival",
-  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
-  "amount": 3200,
-  "incidentDate": "2026-11-01"
-}
-
-### Update claim - not editable (409)
-PUT {{baseUrl}}/api/claims/{{inReviewId}}
-Content-Type: application/json
-
-{
-  "title": "Suitcase wheels and handle broken on arrival",
-  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
-  "amount": 3200,
-  "incidentDate": "2026-11-01"
-}
-
-### Delete claim - success (204)
-DELETE  {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
-
-### Delete claim - not found (404)
-DELETE  {{baseUrl}}/api/claims/{{nonExistentId}}
-
-### Delete claim, - not deletable (409)
-DELETE {{baseUrl}}/api/claims/{{inReviewId}}
-
-### Update status - success (204)
-PATCH  {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
-Content-Type: application/json
-
-{
-  "status": "InReview"
-}
-
-### Update status - bad request (400)
-PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
-Content-Type: application/json
-
-{
-  "status": "Pending"
-}
-
-### Update status - not found (404)
-PATCH {{baseUrl}}/api/claims/{{nonExistentId}}/status
-Content-Type: application/json
-
-{
-  "status": "InReview"
-}
-
-### Update status - invalid transition (409)
-PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
-Content-Type: application/json
-
-{
-  "status": "Received"
-}
-
-### Health check
-GET {{baseUrl}}/health
 
 ### Register - success (201)
 POST {{baseUrl}}/api/auth/register
@@ -219,14 +90,163 @@ Content-Type: application/json
   "refreshToken": "{{login.response.body.refreshToken}}"
 }
 
+### Create claim - success (201)
+# @name createClaim
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "policyNumber": "TRV-2026-118734",
+  "title": "Suitcase wheels broken on arrival",
+  "description": "Damaged on OSLO-ICN flight",
+  "amount": 2500,
+  "incidentDate": "2026-11-02"
+}
+
+
+### Create claim - validation error (400)
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "policyNumber": "TRV-2026-118734",
+  "title": "Invalid claim example",
+  "description": "Amount is zero and incident date is in the future",
+  "amount": 0,
+  "incidentDate": "2030-01-01"
+}
+
+### Get claim by Id - success (200)
+GET {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### Get claim by Id - not found error (404)
+GET {{baseUrl}}/api/claims/{{nonExistentId}}
+Authorization: Bearer {{token}}
+
+### Get all claims - success (200)
+GET {{baseUrl}}/api/claims
+Authorization: Bearer {{token}}
+
+### List claims - filter by Approved (200)
+GET {{baseUrl}}/api/claims?status=Approved
+Authorization: Bearer {{token}}
+
+### List claims - invalid status (400)
+GET {{baseUrl}}/api/claims?status=Pending
+Authorization: Bearer {{token}}
+
+# PUT /api/claims/{id} - Update claim
+
+### Update claim - success (204)
+PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Suitcase wheels and handle broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
+  "amount": 3200,
+  "incidentDate": "2026-11-01"
+}
+
+### Update claim - validation error (400)
+PUT {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "",
+  "description": "Damaged on OSLO-ICN flight",
+  "amount": 0,
+  "incidentDate": "2030-01-01"
+}
+
+### Update claim - not found (404)
+PUT {{baseUrl}}/api/claims/{{nonExistentId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Suitcase wheels and handle broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
+  "amount": 3200,
+  "incidentDate": "2026-11-01"
+}
+
+### Update claim - not editable (409)
+PUT {{baseUrl}}/api/claims/{{inReviewId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Suitcase wheels and handle broken on arrival",
+  "description": "Damaged on OSLO-ICN flight. Handle also bent.",
+  "amount": 3200,
+  "incidentDate": "2026-11-01"
+}
+
+### Delete claim - success (204)
+DELETE  {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### Delete claim - not found (404)
+DELETE  {{baseUrl}}/api/claims/{{nonExistentId}}
+Authorization: Bearer {{token}}
+
+### Delete claim, - not deletable (409)
+DELETE {{baseUrl}}/api/claims/{{inReviewId}}
+Authorization: Bearer {{token}}
+
+### Update status - success (204)
+PATCH  {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "InReview"
+}
+
+### Update status - bad request (400)
+PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "Pending"
+}
+
+### Update status - not found (404)
+PATCH {{baseUrl}}/api/claims/{{nonExistentId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "InReview"
+}
+
+### Update status - invalid transition (409)
+PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "Received"
+}
+
+### Health check
+GET {{baseUrl}}/health
+
 ### GetMe - success (200)
 GET {{baseUrl}}/api/auth/me
-Authorization: Bearer {{login.response.body.accessToken}}
+Authorization: Bearer {{token}}
 
 ### GetMe - no token (401)
 GET {{baseUrl}}/api/auth/me 
 
 ### GetMe - invalid token (401)
 GET {{baseUrl}}/api/auth/me
-Authorization: Bearer {{login.response.body.accessToken}}tampered
+Authorization: Bearer {{token}}tampered
 
