@@ -5,6 +5,7 @@
 @baseUrl = {{local}}
 
 @token={{login.response.body.accessToken}}
+@otherToken = {{loginOther.response.body.accessToken}}
 
 @nonExistentId = 999999
 @inReviewId = 2
@@ -56,6 +57,16 @@ Content-Type: application/json
   "password": "bob-password"
 }
 
+### Login - other customer (200)
+# @name loginOther
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "HTTP-BOB",
+  "password": "bob-password"
+}
+
 ### Login - wrong password (401)
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
@@ -101,6 +112,20 @@ Authorization: Bearer {{token}}
   "title": "Suitcase wheels broken on arrival",
   "description": "Damaged on OSLO-ICN flight",
   "amount": 2500,
+  "incidentDate": "2026-11-02"
+}
+
+### Create claim - other customer (201)
+# @name createOtherClaim
+POST {{baseUrl}}/api/claims
+Content-Type: application/json
+Authorization: Bearer {{otherToken}}
+
+{
+  "policyNumber": "TRV-2026-200001",
+  "title": "Other customer's claim",
+  "description": "Created by http-bob",
+  "amount": 1000,
   "incidentDate": "2026-11-02"
 }
 
@@ -250,3 +275,10 @@ GET {{baseUrl}}/api/auth/me
 GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{token}}tampered
 
+### Get claim by Id - other customer's claim (404)
+GET {{baseUrl}}/api/claims/{{createOtherClaim.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### Get claim by Id - owner can see it (200)
+GET {{baseUrl}}/api/claims/{{createOtherClaim.response.body.$.id}}
+Authorization: Bearer {{otherToken}}

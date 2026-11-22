@@ -38,7 +38,13 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var claimResponse = await claimService.GetByIdAsync(id, cancellationToken);
+        var userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("Missing user id");
+
+        var customerId = int.Parse(userIdValue);
+
+        var claimResponse = await claimService.GetByIdAsync(id, customerId, cancellationToken);
 
         if (claimResponse is null)
         {
