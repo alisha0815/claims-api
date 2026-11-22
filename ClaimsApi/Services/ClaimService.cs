@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using ClaimsApi.Data;
 using ClaimsApi.Dtos;
 using ClaimsApi.Mappings;
@@ -50,11 +51,12 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
     }
 
     public async Task<IReadOnlyList<ClaimResponse>> GetAllAsync(
+        int customerId,
         ClaimStatus? status = null,
         CancellationToken cancellationToken = default
     )
     {
-        var query = db.Claims.AsNoTracking();
+        var query = db.Claims.AsNoTracking().Where(c => c.CustomerId == customerId);
 
         if (status is not null)
         {

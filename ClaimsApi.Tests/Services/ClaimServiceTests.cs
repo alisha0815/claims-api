@@ -128,7 +128,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         var service = CreateService(db);
 
         // Act
-        var result = await service.GetAllAsync();
+        var result = await service.GetAllAsync(SeededCustomerId);
 
         // Assert
         Assert.Empty(result);
@@ -155,7 +155,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         // Act
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
-        var result = await actService.GetAllAsync();
+        var result = await actService.GetAllAsync(SeededCustomerId);
 
         // Assert
         Assert.Equal(2, result.Count);
@@ -183,7 +183,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         // Act
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
-        var result = await actService.GetAllAsync(status: ClaimStatus.Approved);
+        var result = await actService.GetAllAsync(SeededCustomerId, status: ClaimStatus.Approved);
 
         // Assert
         var claim = Assert.Single(result);
@@ -210,7 +210,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         // Act
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
-        var result = await actService.GetAllAsync(status: null);
+        var result = await actService.GetAllAsync(SeededCustomerId, status: null);
 
         // Assert
         Assert.Equal(2, result.Count);
