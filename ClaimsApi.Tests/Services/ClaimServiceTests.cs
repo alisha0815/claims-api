@@ -236,7 +236,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
 
-        var result = await actService.UpdateAsync(id, request);
+        var result = await actService.UpdateAsync(id, SeededCustomerId, request);
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
@@ -272,7 +272,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
 
-        var result = await actService.UpdateAsync(id, request);
+        var result = await actService.UpdateAsync(id, SeededCustomerId, request);
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
@@ -295,7 +295,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         var request = ValidUpdateRequest();
 
         // Act
-        var result = await service.UpdateAsync(nonExistentId, request);
+        var result = await service.UpdateAsync(nonExistentId, SeededCustomerId, request);
 
         // Assert
         Assert.Equal(UpdateClaimResult.NotFound, result);
@@ -316,7 +316,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
 
-        var result = await actService.DeleteAsync(idToDelete);
+        var result = await actService.DeleteAsync(idToDelete, SeededCustomerId);
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
@@ -349,7 +349,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
 
-        var result = await actService.DeleteAsync(id);
+        var result = await actService.DeleteAsync(id, SeededCustomerId);
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
@@ -371,7 +371,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         const int nonExistentId = int.MaxValue;
 
         // Act
-        var result = await service.DeleteAsync(nonExistentId);
+        var result = await service.DeleteAsync(nonExistentId, SeededCustomerId);
 
         // Assert
 
