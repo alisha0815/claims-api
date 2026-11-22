@@ -1,4 +1,3 @@
-using System.ComponentModel.Design.Serialization;
 using System.IdentityModel.Tokens.Jwt;
 using ClaimsApi.Auth;
 using ClaimsApi.Data;
