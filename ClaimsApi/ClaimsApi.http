@@ -282,3 +282,19 @@ Authorization: Bearer {{token}}
 ### Get claim by Id - owner can see it (200)
 GET {{baseUrl}}/api/claims/{{createOtherClaim.response.body.$.id}}
 Authorization: Bearer {{otherToken}}
+
+### Update claim - other customer's claim (404)
+PUT {{baseUrl}}/api/claims/{{createOtherClaim.response.body.$.id}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Changed by bob",
+  "description": "bob tried to edit another customer's claim",
+  "amount": 1,
+  "incidentDate": "2026-11-01"
+}
+
+### Delete claim - other customer's claim (404)
+DELETE {{baseUrl}}/api/claims/{{createOtherClaim.response.body.$.id}}
+Authorization: Bearer {{token}}
