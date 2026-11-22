@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ClaimsApi.Auth;
 using ClaimsApi.Dtos;
 using Microsoft.AspNetCore.Authorization;
@@ -89,5 +90,28 @@ public class AuthController(IAuthService authService) : ControllerBase
         await authService.LogoutAsync(request, cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpGet("me")]
+    [ProducesResponseType<MeResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public ActionResult<MeResponse> GetMe()
+    {
+        var idValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("Missing user Id claim");
+        var id = int.Parse(idValue);
+
+        var username =
+            User.FindFirstValue(ClaimTypes.Name)
+            ?? throw new InvalidOperationException("Missing user name claim");
+
+        var role =
+            User.FindFirstValue(ClaimTypes.Role)
+            ?? throw new InvalidOperationException("Missing user role claim");
+
+        var response = new MeResponse(id, username, role);
+        return Ok(response);
     }
 }
