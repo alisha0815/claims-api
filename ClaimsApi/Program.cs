@@ -78,14 +78,15 @@ await AdminBootstrapper.EnsureAdminAsync(app.Services);
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapOpenApi().AllowAnonymous();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
 });
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapOpenApi().AllowAnonymous();
 
 app.MapControllers();
 
