@@ -219,3 +219,14 @@ Content-Type: application/json
   "refreshToken": "{{login.response.body.refreshToken}}"
 }
 
+### GetMe - success (200)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{login.response.body.accessToken}}
+
+### GetMe - no token (401)
+GET {{baseUrl}}/api/auth/me 
+
+### GetMe - invalid token (401)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{login.response.body.accessToken}}tampered
+
