@@ -90,6 +90,52 @@ public class AuthService(
         return new RegisterResult(RegisterStatus.Created, user.ToRegisterResponse());
     }
 
+    public async Task<RegisterResult> CreateHandlerAsync(
+        RegisterRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var normalizedUsername = UsernameNormalizer.Normalize(request.Username);
+
+        var usernameTaken = await db.Users.AnyAsync(
+            u => u.Username == normalizedUsername,
+            cancellationToken
+        );
+
+        if (usernameTaken)
+        {
+            return new RegisterResult(RegisterStatus.UsernameTaken, null);
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        var user = new User
+        {
+            Username = normalizedUsername,
+            PasswordHash = string.Empty,
+            Role = Roles.Handler,
+            CreatedAt = now,
+        };
+
+        user.PasswordHash = hasher.HashPassword(user, request.Password);
+
+        db.Users.Add(user);
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        // Race condition: two requests with the same username can both pass the AnyAsync check
+        // The unique index rejects the second INSERT and return UsernameTaken (409)
+        catch (UniqueConstraintException ex)
+            when (ex.ConstraintProperties.Contains(nameof(User.Username)))
+        {
+            return new RegisterResult(RegisterStatus.UsernameTaken, null);
+        }
+
+        return new RegisterResult(RegisterStatus.Created, user.ToRegisterResponse());
+    }
+
     public async Task<LoginResult> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default
