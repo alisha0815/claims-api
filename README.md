@@ -1,272 +1,157 @@
 # Claims API
 
-An API where customers submit insurance claims and handlers review, approve or reject them.
-Built with ASP.NET Core, EF Core and PostgreSQL, and deployed to Azure.
+![CI](https://github.com/alisha0815/claims-api/actions/workflows/ci.yml/badge.svg)
 
-[![CI](https://github.com/alisha0815/claims-api/actions/workflows/ci.yml/badge.svg)](https://github.com/alisha0815/claims-api/actions)
+An insurance claims REST API built with ASP.NET Core, EF Core and PostgreSQL, deployed to Azure. Customers submit and manage their own claims, Handlers review every claim and approve or reject it, and Admins create Handler accounts.
 
+## Live demo
 
-- **Live demo (Swagger):** https://claims-api-jungah-h3fre0dfd8asbeed.swedencentral-01.azurewebsites.net/swagger
-- **OpenAPI spec:** https://claims-api-jungah-h3fre0dfd8asbeed.swedencentral-01.azurewebsites.net/openapi/v1.json
-- **Health:** https://claims-api-jungah-h3fre0dfd8asbeed.swedencentral-01.azurewebsites.net/health
+| Environment | Swagger UI | Health |
+| --- | --- | --- |
+| Production | [Swagger](https://claims-api-jungah-h3fre0dfd8asbeed.swedencentral-01.azurewebsites.net/swagger) | [/health](https://claims-api-jungah-h3fre0dfd8asbeed.swedencentral-01.azurewebsites.net/health) |
+| QA | [Swagger](https://claims-api-jungah-qa.azurewebsites.net/swagger) | [/health](https://claims-api-jungah-qa.azurewebsites.net/health) |
 
-> Hosted on the free tier. The first request after a quiet period can take 10–30 seconds while the app wakes up.
-> The demo database is seeded with sample travel insurance claims in every status.
+The free-tier host can take 10–30 seconds to respond after a quiet period.
 
-### Demo account
+**Demo accounts** (QA)
 
-| Username | Password | Role |
-|---|---|---|
-| customer | demo-password | Customer |
+| Role | Username | Password |
+| --- | --- | --- |
+| Customer | `emma` | `demo-password` |
+| Handler | `qa-handler` | `demo-password` |
+| Admin | `qa-admin` | `-tefma7-vitbot` |
 
-The admin account is not public. Run the app locally with your own `Admin:*` settings to try admin features.
+Use the QA environment to try the API. Production accounts are available on request.
 
-Login is available after the auth endpoints are added.
+**Try it in Swagger**
 
----
+1. Open the QA Swagger UI and call `POST /api/auth/login` with one of the demo accounts above and copy the `accessToken`.
+2. Click **Authorize**, paste the token (without `Bearer `) and click **Authorize** again.
+3. Log in as the Customer to file and manage claims, as the Handler to see every claim and change statuses, or as the Admin to create Handlers.
 
 ## Features
 
-- Create, read, update and delete claims
-- Filter claims by status (`?status=Approved`)
-- Status workflow with enforced transition rules
-- Business rules: a claim can only be edited or deleted while it is `Received`
-- Validation errors and business rule violations returned as ProblemDetails
-- Health check that also verifies the database connection
+- Create, list (newest first, optional status filter), read, update and delete claims
+- Status workflow: `Received` → `InReview` → `Approved` or `Rejected`. Approved and rejected claims are final; any other transition returns 409.
+- Only `Received` claims can be edited or deleted
+- Registration (always as Customer), login with JWT access tokens (60 min) and refresh tokens (7 days, rotated on every use), logout
+- Roles: Customer, Handler, Admin
+- ProblemDetails for errors, and a health check that verifies the database connection
+
+## Roles and permissions
+
+| Endpoint | No token | Customer | Handler | Admin |
+| --- | --- | --- | --- | --- |
+| `POST /api/auth/register`, `login`, `refresh`, `logout` | ✓ | ✓ | ✓ | ✓ |
+| `GET /api/auth/me` | 401 | ✓ | ✓ | ✓ |
+| `GET /api/claims`, `GET /api/claims/{id}` | 401 | own | all | own |
+| `POST /api/claims`, `PUT` / `DELETE /api/claims/{id}` | 401 | own | own | own |
+| `PATCH /api/claims/{id}/status` | 401 | 403 | ✓ any claim | 403 |
+| `POST /api/admin/users` (create Handler) | 401 | 403 | 403 | ✓ |
+| `GET /health` | ✓ | ✓ | ✓ | ✓ |
 
 ## Tech stack
 
-| Area | Tools |
-|---|---|
-| API | .NET 10, ASP.NET Core (controllers) |
-| Data | EF Core 10, PostgreSQL 17 |
-| Testing | xUnit, Testcontainers (real PostgreSQL in Docker) |
-| CI | GitHub Actions |
-| Hosting | Azure App Service (F1), Azure Database for PostgreSQL Flexible Server (B1ms) |
+.NET 10 · ASP.NET Core controllers · EF Core 10 · PostgreSQL 17 · xUnit + Testcontainers · GitHub Actions · Azure App Service (F1) · Azure Database for PostgreSQL Flexible Server (B1ms)
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Client[Client / Swagger] --> Controller[ClaimsController]
-    Controller --> Service[ClaimService]
-    Service --> Rules[ClaimStatusTransitions]
-    Service --> Db[AppDbContext]
-    Db --> Pg[(PostgreSQL)]
-```
+Controllers handle HTTP and map results to status codes. Services (`ClaimService`, `AuthService`) apply business rules, `ClaimStatusTransitions` decides which status changes are allowed, and `AppDbContext` talks to PostgreSQL.
 
-The controller handles HTTP only and maps service results to status codes.
-The service applies the business rules and uses `ClaimStatusTransitions` to check status changes.
-`AppDbContext` reads and writes data in PostgreSQL through EF Core.
-
-## Request flow
-
-Example: changing a claim's status.
+## Data model
 
 ```mermaid
-sequenceDiagram
-    participant C as Client
-    participant Ctrl as ClaimsController
-    participant S as ClaimService
-    participant R as ClaimStatusTransitions
-    participant DB as PostgreSQL
+erDiagram
+    USERS ||--o{ CLAIMS : "owns (CustomerId)"
+    USERS ||--o{ REFRESH_TOKENS : has
 
-    C->>Ctrl: PATCH /api/claims/5/status { "status": "Approved" }
-    Note over Ctrl: Invalid body → 400 (before the controller runs)
-    Ctrl->>S: UpdateStatusAsync(5, request)
-    S->>DB: Find claim 5
-    alt Not found
-        S-->>Ctrl: NotFound
-        Ctrl-->>C: 404
-    else Transition not allowed
-        S->>R: CanTransition(current, new)
-        R-->>S: false
-        S-->>Ctrl: InvalidTransition
-        Ctrl-->>C: 409
-    else Allowed
-        S->>DB: Save new status
-        S-->>Ctrl: Updated
-        Ctrl-->>C: 204
-    end
+    USERS {
+        int Id PK
+        string Username UK "normalized"
+        string PasswordHash
+        string Role "Customer | Handler | Admin"
+        datetime CreatedAt
+    }
+    CLAIMS {
+        int Id PK
+        int CustomerId FK
+        string PolicyNumber
+        string Title
+        string Description
+        decimal Amount
+        date IncidentDate
+        string Status "stored as text"
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    REFRESH_TOKENS {
+        int Id PK
+        int UserId FK
+        string TokenHash UK "SHA-256"
+        datetime ExpiresAt
+        datetime CreatedAt
+        datetime RevokedAt "nullable"
+    }
 ```
-
-## Endpoints
-
-| Method | Path | Description | Responses |
-|---|---|---|---|
-| GET | `/api/claims` | List claims, newest first. Optional `?status=` | 200, 400 |
-| GET | `/api/claims/{id}` | Get one claim | 200, 404 |
-| POST | `/api/claims` | Create a claim (starts as `Received`) | 201, 400 |
-| PUT | `/api/claims/{id}` | Update a claim (`Received` only) | 204, 400, 404, 409 |
-| DELETE | `/api/claims/{id}` | Delete a claim (`Received` only) | 204, 404, 409 |
-| PATCH | `/api/claims/{id}/status` | Change status | 204, 400, 404, 409 |
-| GET | `/health` | App and database health | 200, 503 |
-| POST | `/api/auth/register` | Register a new user (always created as `Customer`) | 201, 400, 409 |
-
-## Authentication
-
-### Register
-
-`POST /api/auth/register`
-
-```json
-{
-  "username": "alice",
-  "password": "alice-password"
-}
-```
-
-| Status | When |
-|---|---|
-| 201 Created | The user is created. The response contains `id`, `username`, `role`, `createdAt`. |
-| 400 Bad Request | Validation failed (e.g. password shorter than 8 characters). |
-| 409 Conflict | The username is already taken. |
-
-Rules:
-- Usernames are case-insensitive and trimmed: `" Alice "` is stored as `alice`.
-- Passwords must be at least 8 characters and are stored as hashes. The hash is never returned.
-- New users are always `Customer`. A `role` sent in the request is ignored.
-- Duplicate usernames are blocked twice: a check before saving, and a unique index for concurrent requests.
-
-Example requests are in [`ClaimsApi/ClaimsApi.http`](ClaimsApi/ClaimsApi.http).
-
-## Status workflow
-
-```mermaid
-stateDiagram-v2
-    [*] --> Received
-    Received --> InReview
-    InReview --> Approved
-    InReview --> Rejected
-    Approved --> [*]
-    Rejected --> [*]
-```
-
-Any other transition is rejected with `409 Conflict`. The rules live in
-[`ClaimStatusTransitions.cs`](ClaimsApi/Models/ClaimStatusTransitions.cs).
-
-Every claim must be reviewed before a decision, and an approved or rejected claim is final.
 
 ## Design decisions
 
-### No repository layer
-I used `DbContext` directly because it already supports basic database operations
-like reading, adding, updating and deleting data, so I didn't need another layer.
-I wanted to avoid abstractions that aren't necessary at this size, and would add one
-if the app needed more than one data source.
+**Security**
 
-### Business rules live in the service
-I kept the business rules, such as "only `Received` claims can be edited", in `ClaimService`
-instead of the controller. The controller only maps the result to an HTTP status code.
-This way the tests can call the service directly, without running the web server or sending HTTP requests.
+- **Secure by default.** A fallback authorization policy requires a logged-in user on every endpoint. Only the auth endpoints, `/health` and the OpenAPI document are explicitly opened.
+- **Other customers' claims return 404, not 403**, so the API never confirms that someone else's claim exists.
+- **Roles are checked at the edge, ownership in the service.** `[Authorize(Roles = ...)]` returns 403 before the controller runs; the service's `CustomerId` filter returns 404.
+- **Refresh tokens are random values stored only as SHA-256 hashes** and revoked on every use, so a reused token fails.
+- **The first Admin is created at startup from configuration secrets**, and the check is idempotent.
 
-### Transition rules as a pure function
-I put the rules for status changes in a separate static function, `ClaimStatusTransitions.CanTransition`.
-It doesn't depend on a database or other services, so I can test it easily with `[Theory]` and different inputs.
-It only lists the allowed transitions and rejects everything else, because forgetting to allow
-a transition is easy to notice, but forgetting to block one could let a claim skip review.
+**Code**
 
-### Result enums instead of exceptions
-I used enums for expected results, like `NotFound` or `NotEditable`, instead of throwing exceptions.
-These are normal outcomes, not errors, and the enum makes every possible result visible in the method's return type.
-Unexpected errors are still handled by the global exception handler.
-
-### Separate request DTOs per endpoint
-I used different request DTOs for creating and updating claims.
-For example, `PolicyNumber` is included when creating a claim, but not when updating it.
-This prevents clients from changing the policy number after the claim has been submitted,
-because it links the claim to the policy that decides what is covered.
-
-### Testing against real PostgreSQL
-I used Testcontainers with a real PostgreSQL database instead of an in-memory database, so the tests behave like production.
-When a test checks saved data, it uses separate DbContexts for arrange, act and assert.
-EF Core's change tracker keeps loaded entities in memory, so a new DbContext makes sure the test reads what was actually saved.
-The trade-off is slower tests that need Docker, but I think the reliability is worth it.
-
-### Swagger is public in production
-This is a portfolio demo, so Swagger is open for reviewers to try the API.
-In a real system I would only enable it in development or put it behind authentication.
-
-### Admin bootstrap from configuration
-Handlers are created by an admin through the API, so the first admin has to come from outside the API.
-On startup, the app creates an admin from `Admin:Username` and `Admin:Password` if none exists.
-The password lives in user-secrets locally and in App Service settings in Azure, so it is never in Git.
-The check is idempotent: restarting the app does not create another admin.
+- No repository layer; services use `DbContext` directly.
+- Business rules live in the services, so tests call them without an HTTP server.
+- Expected outcomes use result enums instead of exceptions.
+- Create and update use separate DTOs, so the policy number can't change after submission.
+- Swagger is public in production as a demo choice.
 
 ## Testing
-- **Service tests** cover create, read, update, delete and status changes, including the business rules
-  (only `Received` claims can be edited or deleted) and not-found cases. They run against a real PostgreSQL database.
-- **Transition rule tests** use `[Theory]` to check every allowed transition and the forbidden ones,
-  such as skipping review or changing a final decision.
-- **Validation tests** check that the incident date cannot be in the future.
-
-`FakeTimeProvider` keeps time-based tests stable, so they don't depend on the current date.
 
 ```bash
 dotnet test
 ```
 
-Docker must be running, because the tests start a PostgreSQL container.
+Tests run against real PostgreSQL via Testcontainers (Docker must be running), so migrations, unique indexes and foreign keys are tested too. Time is injected with `TimeProvider` to keep tests deterministic. Service tests cover CRUD, business rules, ownership and roles; theory tests cover allowed and forbidden status transitions.
 
-## Run locally
+## Running locally
 
-### Prerequisites
+Requires the .NET 10 SDK, Docker and the `dotnet-ef` tool.
 
-- .NET 10 SDK
-- Docker
-- EF Core CLI: `dotnet tool install --global dotnet-ef`
+1. Start PostgreSQL on port 5433: `docker compose up -d`
+2. Set secrets (from the `ClaimsApi` folder):
 
-### Steps
-```bash
-git clone https://github.com/alisha0815/claims-api.git
-cd claims-api
+   ```bash
+   dotnet user-secrets set "ConnectionStrings:ClaimsDb" "<connection string>"
+   dotnet user-secrets set "Jwt:Key" "<at least 32 random bytes>"
+   dotnet user-secrets set "Admin:Username" "<admin username>"
+   dotnet user-secrets set "Admin:Password" "<admin password>"
+   ```
 
-# 1. Start PostgreSQL (Docker, port 5433)
-docker compose up -d
-
-# 2. Store the connection string in user-secrets (not committed to Git)
-dotnet user-secrets set "ConnectionStrings:ClaimsDb" \
-  "Host=localhost;Port=5433;Database=claims;Username=claims;Password=<your-password>" \
-  --project ClaimsApi
-
-# 3. (Optional) Configure the admin account. The first admin is created on startup.
-dotnet user-secrets set "Admin:Username" "admin" --project ClaimsApi
-dotnet user-secrets set "Admin:Password" "<choose-a-password>" --project ClaimsApi
-
-# 4. Apply migrations and run the API
-dotnet ef database update --project ClaimsApi
-dotnet run --project ClaimsApi
-```
-
-Use the same password as `POSTGRES_PASSWORD` in [`docker-compose.yml`](docker-compose.yml).
-If `Admin:*` is not set, the app starts normally and skips admin creation.
-Open http://localhost:5175/swagger.
-
-Example requests are in [`ClaimsApi/ClaimsApi.http`](ClaimsApi/ClaimsApi.http).
-Sample data can be loaded with [`ClaimsApi/demo-data.http`](ClaimsApi/demo-data.http).
+3. Apply migrations and run: `dotnet ef database update`, then `dotnet run`
+4. Open `http://localhost:5175/swagger`, or use the requests in `ClaimsApi.http`
 
 ## Deployment
 
-| Resource | Azure service | Region |
-|---|---|---|
-| API | App Service, Linux, F1 | Sweden Central |
-| Database | Azure Database for PostgreSQL Flexible Server, B1ms | Norway East |
-
-- The connection string is stored in App Service settings, not in the code.
-- The first deployment was manual. Automatic deployment with GitHub Actions is on the roadmap.
-
-The database is in a different region because PostgreSQL Flexible Server (B1ms) was not available
-for my subscription in Sweden Central. In production I would keep both in the same region to reduce latency.
+- Every pull request runs build and tests in GitHub Actions.
+- Merging to `main` deploys to **QA** automatically, then to **production** after manual approval. Azure login uses OIDC, so no publish secrets are stored.
+- Migrations are applied manually before merging (database first, code second).
+- The API runs on App Service (Linux, F1) in Sweden Central. The database runs in Norway East, because B1ms wasn't available in Sweden Central for this subscription.
 
 ## Roadmap
 
-- [x] CRUD with business rules
-- [x] Status filter
-- [x] Status transitions
+- [x] CRUD with business rules and status workflow
 - [x] Health check
-- [x] Deploy to Azure
-- [ ] JWT authentication (in progress)
-- [ ] Customers see only their own claims
-- [ ] Handler role for approve and reject
-- [ ] Automatic deployment with GitHub Actions
+- [x] JWT authentication with refresh tokens
+- [x] Customer ownership of claims
+- [x] Handler and Admin roles
+- [x] CI/CD with QA and production
 - [ ] React frontend
+- [ ] Integration tests with `WebApplicationFactory`
+- [ ] Shared user-creation logic
