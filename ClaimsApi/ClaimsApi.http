@@ -7,6 +7,7 @@
 @token={{login.response.body.accessToken}}
 @otherToken = {{loginOther.response.body.accessToken}}
 @adminToken ={{loginAdmin.response.body.accessToken}}
+@handlerToken={{loginHandler.response.body.accessToken}}
 
 @nonExistentId = 999999
 @inReviewId = 2
@@ -349,3 +350,20 @@ Content-Type: application/json
   "password": "handler-password"
 }
 
+### Login as handler (200)
+# @name loginHandler
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "handler-one",
+  "password": "handler-password"
+}
+
+### Get all claims - handler sees all claims (200)
+GET {{baseUrl}}/api/claims
+Authorization: Bearer {{handlerToken}}
+
+### Get claim by Id - handler reads another customer´s claim (200)
+GET {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
+Authorization: Bearer {{handlerToken}}

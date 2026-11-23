@@ -40,25 +40,34 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
 
     public async Task<ClaimResponse?> GetByIdAsync(
         int id,
-        int customerId,
+        int? customerId,
         CancellationToken cancellationToken = default
     )
     {
-        var claim = await db
-            .Claims.AsNoTracking()
-            .Where(c => c.CustomerId == customerId)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        var query = db.Claims.AsNoTracking();
+
+        if (customerId is not null)
+        {
+            query = query.Where(c => c.CustomerId == customerId);
+        }
+
+        var claim = await query.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         return claim?.ToResponse();
     }
 
     public async Task<IReadOnlyList<ClaimResponse>> GetAllAsync(
-        int customerId,
+        int? customerId,
         ClaimStatus? status = null,
         CancellationToken cancellationToken = default
     )
     {
-        var query = db.Claims.AsNoTracking().Where(c => c.CustomerId == customerId);
+        var query = db.Claims.AsNoTracking();
+
+        if (customerId is not null)
+        {
+            query = query.Where(c => c.CustomerId == customerId);
+        }
 
         if (status is not null)
         {
