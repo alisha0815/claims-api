@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Security.Claims;
+using ClaimsApi.Auth;
 using ClaimsApi.Dtos;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
@@ -19,11 +19,7 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var userIdValue =
-            User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new InvalidOperationException("Missing user id");
-
-        var customerId = int.Parse(userIdValue);
+        var customerId = User.GetUserId();
 
         var claimResponse = await claimService.CreateAsync(customerId, request, cancellationToken);
 
@@ -38,11 +34,7 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var userIdValue =
-            User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new InvalidOperationException("Missing user id");
-
-        var customerId = int.Parse(userIdValue);
+        var customerId = User.GetUserId();
 
         var claimResponse = await claimService.GetByIdAsync(id, customerId, cancellationToken);
 
@@ -62,11 +54,7 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var userIdValue =
-            User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new InvalidOperationException("Missing user id");
-
-        var customerId = int.Parse(userIdValue);
+        var customerId = User.GetUserId();
 
         var claims = await claimService.GetAllAsync(customerId, status, cancellationToken);
 
@@ -84,11 +72,7 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var userIdValue =
-            User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new InvalidOperationException("Missing user id");
-
-        var customerId = int.Parse(userIdValue);
+        var customerId = User.GetUserId();
         var result = await claimService.UpdateAsync(id, customerId, request, cancellationToken);
 
         return result switch
@@ -109,11 +93,7 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult> DeleteById(int id, CancellationToken cancellationToken)
     {
-        var userIdValue =
-            User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new InvalidOperationException("Missing user id");
-
-        var customerId = int.Parse(userIdValue);
+        var customerId = User.GetUserId();
 
         var result = await claimService.DeleteAsync(id, customerId, cancellationToken);
 
