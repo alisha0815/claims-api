@@ -236,7 +236,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
 
-        var result = await actService.UpdateAsync(id, request);
+        var result = await actService.UpdateAsync(id, SeededCustomerId, request);
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
@@ -272,7 +272,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
 
-        var result = await actService.UpdateAsync(id, request);
+        var result = await actService.UpdateAsync(id, SeededCustomerId, request);
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
@@ -295,7 +295,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         var request = ValidUpdateRequest();
 
         // Act
-        var result = await service.UpdateAsync(nonExistentId, request);
+        var result = await service.UpdateAsync(nonExistentId, SeededCustomerId, request);
 
         // Assert
         Assert.Equal(UpdateClaimResult.NotFound, result);
@@ -316,7 +316,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
 
-        var result = await actService.DeleteAsync(idToDelete);
+        var result = await actService.DeleteAsync(idToDelete, SeededCustomerId);
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
@@ -349,7 +349,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         await using var actDb = fixture.CreateDbContext();
         var actService = CreateService(actDb);
 
-        var result = await actService.DeleteAsync(id);
+        var result = await actService.DeleteAsync(id, SeededCustomerId);
 
         // Assert
         await using var assertDb = fixture.CreateDbContext();
@@ -371,7 +371,7 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         const int nonExistentId = int.MaxValue;
 
         // Act
-        var result = await service.DeleteAsync(nonExistentId);
+        var result = await service.DeleteAsync(nonExistentId, SeededCustomerId);
 
         // Assert
 
@@ -523,5 +523,87 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
 
         // Assert
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_OtherCustomersClaim_ReturnsNotFound()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create other customer
+        var otherCustomer = new User
+        {
+            Username = $"other-{Guid.NewGuid()}",
+            PasswordHash = "not-a-real-hash",
+            Role = Roles.Customer,
+            CreatedAt = _fixedTime,
+        };
+
+        arrangeDb.Users.Add(otherCustomer);
+        await arrangeDb.SaveChangesAsync();
+
+        var arrangeService = CreateService(arrangeDb);
+
+        var otherCustomerClaim = await arrangeService.CreateAsync(otherCustomer.Id, ValidRequest());
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var request = ValidUpdateRequest();
+
+        var result = await actService.UpdateAsync(otherCustomerClaim.Id, SeededCustomerId, request);
+
+        // Assert
+        Assert.Equal(UpdateClaimResult.NotFound, result);
+
+        await using var assertDb = fixture.CreateDbContext();
+        var assertService = CreateService(assertDb);
+
+        var stored = await assertService.GetByIdAsync(otherCustomerClaim.Id, otherCustomer.Id);
+
+        Assert.NotNull(stored);
+        Assert.Equal(ValidRequest().Title, stored.Title);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_OtherCustomersClaim_ReturnsNotFound()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create other customer
+        var otherCustomer = new User
+        {
+            Username = $"other-{Guid.NewGuid()}",
+            PasswordHash = "not-a-real-hash",
+            Role = Roles.Customer,
+            CreatedAt = _fixedTime,
+        };
+
+        arrangeDb.Users.Add(otherCustomer);
+        await arrangeDb.SaveChangesAsync();
+
+        var arrangeService = CreateService(arrangeDb);
+
+        var otherCustomerClaim = await arrangeService.CreateAsync(otherCustomer.Id, ValidRequest());
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.DeleteAsync(otherCustomerClaim.Id, SeededCustomerId);
+
+        // Assert
+        Assert.Equal(DeleteClaimResult.NotFound, result);
+
+        await using var assertDb = fixture.CreateDbContext();
+        var assertService = CreateService(assertDb);
+
+        var stored = await assertService.GetByIdAsync(otherCustomerClaim.Id, otherCustomer.Id);
+
+        Assert.NotNull(stored);
+        Assert.Equal(ValidRequest().Title, stored.Title);
     }
 }

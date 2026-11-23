@@ -84,7 +84,12 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var result = await claimService.UpdateAsync(id, request, cancellationToken);
+        var userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("Missing user id");
+
+        var customerId = int.Parse(userIdValue);
+        var result = await claimService.UpdateAsync(id, customerId, request, cancellationToken);
 
         return result switch
         {
@@ -104,7 +109,13 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult> DeleteById(int id, CancellationToken cancellationToken)
     {
-        var result = await claimService.DeleteAsync(id, cancellationToken);
+        var userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("Missing user id");
+
+        var customerId = int.Parse(userIdValue);
+
+        var result = await claimService.DeleteAsync(id, customerId, cancellationToken);
 
         return result switch
         {

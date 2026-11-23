@@ -76,11 +76,15 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
 
     public async Task<UpdateClaimResult> UpdateAsync(
         int id,
+        int customerId,
         UpdateClaimRequest request,
         CancellationToken cancellationToken = default
     )
     {
-        var claimToUpdate = await db.Claims.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        var claimToUpdate = await db.Claims.FirstOrDefaultAsync(
+            c => c.Id == id && c.CustomerId == customerId,
+            cancellationToken
+        );
 
         if (claimToUpdate is null)
         {
@@ -108,10 +112,14 @@ public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimSe
 
     public async Task<DeleteClaimResult> DeleteAsync(
         int id,
+        int customerId,
         CancellationToken cancellationToken = default
     )
     {
-        var claimToDelete = await db.Claims.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        var claimToDelete = await db.Claims.FirstOrDefaultAsync(
+            c => c.Id == id && c.CustomerId == customerId,
+            cancellationToken
+        );
 
         if (claimToDelete is null)
         {
