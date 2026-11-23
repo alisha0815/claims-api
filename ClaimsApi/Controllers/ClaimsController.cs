@@ -34,7 +34,9 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var customerId = User.GetUserId();
+        var isHandler = User.IsInRole(Roles.Handler);
+
+        int? customerId = isHandler ? null : User.GetUserId();
 
         var claimResponse = await claimService.GetByIdAsync(id, customerId, cancellationToken);
 
@@ -54,7 +56,9 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var customerId = User.GetUserId();
+        var isHandler = User.IsInRole(Roles.Handler);
+
+        int? customerId = isHandler ? null : User.GetUserId();
 
         var claims = await claimService.GetAllAsync(customerId, status, cancellationToken);
 

@@ -13,12 +13,12 @@ public interface IClaimService
 
     Task<ClaimResponse?> GetByIdAsync(
         int id,
-        int customerId,
+        int? customerId,
         CancellationToken cancellationToken = default
     );
 
     Task<IReadOnlyList<ClaimResponse>> GetAllAsync(
-        int customerId,
+        int? customerId,
         ClaimStatus? status = null,
         CancellationToken cancellationToken = default
     );

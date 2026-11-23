@@ -606,4 +606,74 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         Assert.NotNull(stored);
         Assert.Equal(ValidRequest().Title, stored.Title);
     }
+
+    [Fact]
+    public async Task GetAllAsync_NullCustomerId_ReturnsAllCustomerClaims()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+        await arrangeDb.Claims.ExecuteDeleteAsync();
+
+        // Create other customer
+        var otherCustomer = new User
+        {
+            Username = $"other-{Guid.NewGuid()}",
+            PasswordHash = "not-a-real-hash",
+            Role = Roles.Customer,
+            CreatedAt = _fixedTime,
+        };
+
+        arrangeDb.Users.Add(otherCustomer);
+        await arrangeDb.SaveChangesAsync();
+
+        var arrangeService = CreateService(arrangeDb);
+
+        // One claim for me, one for the other customer
+        var myClaim = await arrangeService.CreateAsync(SeededCustomerId, ValidRequest());
+        var otherCustomerClaim = await arrangeService.CreateAsync(otherCustomer.Id, ValidRequest());
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.GetAllAsync(null);
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, c => c.Id == myClaim.Id);
+        Assert.Contains(result, c => c.Id == otherCustomerClaim.Id);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_NullCustomerId_ReturnsAnyCustomersClaim()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create other customer
+        var otherCustomer = new User
+        {
+            Username = $"other-{Guid.NewGuid()}",
+            PasswordHash = "not-a-real-hash",
+            Role = Roles.Customer,
+            CreatedAt = _fixedTime,
+        };
+
+        arrangeDb.Users.Add(otherCustomer);
+        await arrangeDb.SaveChangesAsync();
+
+        var arrangeService = CreateService(arrangeDb);
+
+        var claim = await arrangeService.CreateAsync(otherCustomer.Id, ValidRequest());
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.GetByIdAsync(claim.Id, null);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(claim.Id, result.Id);
+    }
 }
