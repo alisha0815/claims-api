@@ -19,4 +19,14 @@ public class ClaimsPrincipalExtensionsTest
         // Assert
         Assert.Equal(104, id);
     }
+
+    [Fact]
+    public void GetUserId_MissingClaim_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var user = new ClaimsPrincipal(new ClaimsIdentity([], "test"));
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => user.GetUserId());
+    }
 }
