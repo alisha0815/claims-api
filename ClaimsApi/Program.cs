@@ -2,6 +2,7 @@ using System.Text;
 using ClaimsApi.Auth;
 using ClaimsApi.Data;
 using ClaimsApi.Models;
+using ClaimsApi.OpenApi;
 using ClaimsApi.Services;
 using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -14,7 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>()
+);
 
 builder.Services.AddProblemDetails();
 
@@ -81,6 +84,7 @@ app.UseHttpsRedirection();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
+    options.EnablePersistAuthorization();
 });
 
 app.UseAuthentication();

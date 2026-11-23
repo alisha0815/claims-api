@@ -10,6 +10,7 @@ namespace ClaimsApi.Controllers;
 
 [ApiController]
 [Route("api/claims")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class ClaimsController(IClaimService claimService) : ControllerBase
 {
     [HttpPost]
