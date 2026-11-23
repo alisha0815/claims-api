@@ -20,6 +20,8 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
             Type = SecuritySchemeType.Http,
             Scheme = "bearer",
             BearerFormat = "JWT",
+            Description =
+                "Paste the accessToken from POST /api/auth/login (without the 'Bearer' prefix).",
         };
 
         return Task.CompletedTask;
