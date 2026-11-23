@@ -227,8 +227,8 @@ Authorization: Bearer {{token}}
 DELETE {{baseUrl}}/api/claims/{{inReviewId}}
 Authorization: Bearer {{token}}
 
-### Update status - success (204)
-PATCH  {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
+### Update status - customer token (403)
+PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -236,10 +236,19 @@ Authorization: Bearer {{token}}
   "status": "InReview"
 }
 
+### Update status - success (204)
+PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
+Content-Type: application/json
+Authorization: Bearer {{handlerToken}}
+
+{
+  "status": "Approved"
+}
+
 ### Update status - bad request (400)
 PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
 Content-Type: application/json
-Authorization: Bearer {{token}}
+Authorization: Bearer {{handlerToken}}
 
 {
   "status": "Pending"
@@ -248,7 +257,7 @@ Authorization: Bearer {{token}}
 ### Update status - not found (404)
 PATCH {{baseUrl}}/api/claims/{{nonExistentId}}/status
 Content-Type: application/json
-Authorization: Bearer {{token}}
+Authorization: Bearer {{handlerToken}}
 
 {
   "status": "InReview"
@@ -257,7 +266,7 @@ Authorization: Bearer {{token}}
 ### Update status - invalid transition (409)
 PATCH {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}/status
 Content-Type: application/json
-Authorization: Bearer {{token}}
+Authorization: Bearer {{handlerToken}}
 
 {
   "status": "Received"

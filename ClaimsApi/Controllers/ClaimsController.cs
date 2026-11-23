@@ -3,6 +3,7 @@ using ClaimsApi.Auth;
 using ClaimsApi.Dtos;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClaimsApi.Controllers;
@@ -118,6 +119,8 @@ public class ClaimsController(IClaimService claimService) : ControllerBase
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [Authorize(Roles = $"{Roles.Handler}, {Roles.Admin}")]
     public async Task<ActionResult> UpdateStatusById(
         int id,
         UpdateClaimStatusRequest request,
