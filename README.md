@@ -29,6 +29,23 @@ Use the QA environment to try the API. Production accounts are available on requ
 2. Click **Authorize**, paste the token (without `Bearer `) and click **Authorize** again.
 3. Log in as the Customer to file and manage claims, as the Handler to see every claim and change statuses, or as the Admin to create Handlers.
 
+**Create a Handler as Admin**
+
+1. Call `POST /api/auth/login` with the QA Admin account and copy the `accessToken`.
+2. Click **Authorize** and paste the token. If you are already authorized as another user, click **Logout** first.
+3. Call `POST /api/admin/users` with a new username and password:
+
+   ```json
+   {
+     "username": "<choose a new username>",
+     "password": "demo-password"
+   }
+   ```
+
+4. The response is `201` with `"role": "Handler"`. You can now log in with the new account and use the Handler features.
+
+The new account is always a Handler. A Customer or Handler token gets `403`, and an existing username gets `409`.
+
 ## Features
 
 - Create, list (newest first, optional status filter), read, update and delete claims
