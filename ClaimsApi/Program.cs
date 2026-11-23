@@ -84,6 +84,7 @@ app.UseHttpsRedirection();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
+    options.EnablePersistAuthorization();
 });
 
 app.UseAuthentication();
