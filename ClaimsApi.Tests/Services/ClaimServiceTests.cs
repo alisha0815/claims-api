@@ -643,4 +643,37 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         Assert.Contains(result, c => c.Id == myClaim.Id);
         Assert.Contains(result, c => c.Id == otherCustomerClaim.Id);
     }
+
+    [Fact]
+    public async Task GetByIdAsync_NullCustomerId_ReturnsAnyCustomersClaim()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create other customer
+        var otherCustomer = new User
+        {
+            Username = $"other-{Guid.NewGuid()}",
+            PasswordHash = "not-a-real-hash",
+            Role = Roles.Customer,
+            CreatedAt = _fixedTime,
+        };
+
+        arrangeDb.Users.Add(otherCustomer);
+        await arrangeDb.SaveChangesAsync();
+
+        var arrangeService = CreateService(arrangeDb);
+
+        var claim = await arrangeService.CreateAsync(otherCustomer.Id, ValidRequest());
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.GetByIdAsync(claim.Id, null);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(claim.Id, result.Id);
+    }
 }
