@@ -566,4 +566,44 @@ public class ClaimServiceTests(PostgresFixture fixture) : IClassFixture<Postgres
         Assert.NotNull(stored);
         Assert.Equal(ValidRequest().Title, stored.Title);
     }
+
+    [Fact]
+    public async Task DeleteAsync_OtherCustomersClaim_ReturnsNotFound()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        // Create other customer
+        var otherCustomer = new User
+        {
+            Username = $"other-{Guid.NewGuid()}",
+            PasswordHash = "not-a-real-hash",
+            Role = Roles.Customer,
+            CreatedAt = _fixedTime,
+        };
+
+        arrangeDb.Users.Add(otherCustomer);
+        await arrangeDb.SaveChangesAsync();
+
+        var arrangeService = CreateService(arrangeDb);
+
+        var otherCustomerClaim = await arrangeService.CreateAsync(otherCustomer.Id, ValidRequest());
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateService(actDb);
+
+        var result = await actService.DeleteAsync(otherCustomerClaim.Id, SeededCustomerId);
+
+        // Assert
+        Assert.Equal(DeleteClaimResult.NotFound, result);
+
+        await using var assertDb = fixture.CreateDbContext();
+        var assertService = CreateService(assertDb);
+
+        var stored = await assertService.GetByIdAsync(otherCustomerClaim.Id, otherCustomer.Id);
+
+        Assert.NotNull(stored);
+        Assert.Equal(ValidRequest().Title, stored.Title);
+    }
 }
