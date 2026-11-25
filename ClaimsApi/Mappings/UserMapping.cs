@@ -1,4 +1,4 @@
-using ClaimsApi.Dtos;
+using ClaimsApi.Dtos.Auth;
 using ClaimsApi.Models;
 
 namespace ClaimsApi.Mappings;

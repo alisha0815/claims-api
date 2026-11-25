@@ -1,4 +1,4 @@
-namespace ClaimsApi.Dtos;
+namespace ClaimsApi.Auth;
 
 public enum RegisterStatus
 {

@@ -1,5 +1,5 @@
 using ClaimsApi.Data;
-using ClaimsApi.Dtos;
+using ClaimsApi.Dtos.Auth;
 using ClaimsApi.Mappings;
 using ClaimsApi.Models;
 using EntityFramework.Exceptions.Common;

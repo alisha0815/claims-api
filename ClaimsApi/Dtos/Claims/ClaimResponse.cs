@@ -1,6 +1,6 @@
 using ClaimsApi.Models;
 
-namespace ClaimsApi.Dtos;
+namespace ClaimsApi.Dtos.Claims;
 
 public record ClaimResponse(
     int Id,
