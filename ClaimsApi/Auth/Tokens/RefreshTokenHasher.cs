@@ -2,7 +2,7 @@ using System.Buffers.Text;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ClaimsApi.Auth;
+namespace ClaimsApi.Auth.Tokens;
 
 public static class RefreshTokenHasher
 {

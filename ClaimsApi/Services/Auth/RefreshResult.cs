@@ -1,5 +1,5 @@
 using ClaimsApi.Dtos.Auth;
 
-namespace ClaimsApi.Auth;
+namespace ClaimsApi.Services.Auth;
 
 public record RefreshResult(RefreshStatus Status, LoginResponse? Response);

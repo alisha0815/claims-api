@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using JwtClaim = System.Security.Claims.Claim;
 
-namespace ClaimsApi.Auth;
+namespace ClaimsApi.Auth.Tokens;
 
 public class TokenService(IOptions<JwtOptions> options, TimeProvider timeProvider) : ITokenService
 {
