@@ -1,4 +1,4 @@
-namespace ClaimsApi.Services;
+namespace ClaimsApi.Services.Claims;
 
 public enum DeleteClaimResult
 {

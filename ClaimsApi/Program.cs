@@ -3,7 +3,7 @@ using ClaimsApi.Auth;
 using ClaimsApi.Data;
 using ClaimsApi.Models;
 using ClaimsApi.OpenApi;
-using ClaimsApi.Services;
+using ClaimsApi.Services.Claims;
 using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;

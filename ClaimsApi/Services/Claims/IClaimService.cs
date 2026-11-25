@@ -1,7 +1,7 @@
 using ClaimsApi.Dtos.Claims;
 using ClaimsApi.Models;
 
-namespace ClaimsApi.Services;
+namespace ClaimsApi.Services.Claims;
 
 public interface IClaimService
 {
