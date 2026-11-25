@@ -4,6 +4,7 @@ using ClaimsApi.Auth.Tokens;
 using ClaimsApi.Data;
 using ClaimsApi.Dtos.Auth;
 using ClaimsApi.Models;
+using ClaimsApi.Services.Admin;
 using ClaimsApi.Services.Auth;
 using ClaimsApi.Tests.Fixtures;
 using Microsoft.AspNetCore.Identity;
@@ -47,6 +48,13 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
 
         return new AuthService(db, _hasher, clock, tokenService);
     }
+
+    private AccountAdminService CreateAccountAdminService(AppDbContext db) => new(db);
+
+    private static readonly string PasswordHashValue = new PasswordHasher<User>().HashPassword(
+        null!,
+        Password
+    );
 
     // RegisterAsync - success
     [Fact]
@@ -442,5 +450,125 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         var count = await assertDb.Users.CountAsync(u => u.Username == $"handler-{guid}");
 
         Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public async Task GetAllHandlers_ReturnsOnlyHandlers()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        var guid = Guid.NewGuid();
+
+        var customerName = $"test-customer-{guid}";
+        var adminName = $"test-admin-{guid}";
+        var handlerOneName = $"handler-one-{guid}";
+        var handlerTwoName = $"handler-two-{guid}";
+
+        // Create customer, admin, handler
+        var users = new List<User>
+        {
+            new()
+            {
+                Username = customerName,
+                PasswordHash = PasswordHashValue,
+                Role = Roles.Customer,
+                CreatedAt = _fixedTime,
+            },
+            new()
+            {
+                Username = adminName,
+                PasswordHash = PasswordHashValue,
+                Role = Roles.Admin,
+                CreatedAt = _fixedTime,
+            },
+            new()
+            {
+                Username = handlerOneName,
+                PasswordHash = PasswordHashValue,
+                Role = Roles.Handler,
+                CreatedAt = _fixedTime,
+            },
+            new()
+            {
+                Username = handlerTwoName,
+                PasswordHash = PasswordHashValue,
+                Role = Roles.Handler,
+                CreatedAt = _fixedTime,
+            },
+        };
+
+        // Store
+        arrangeDb.Users.AddRange(users);
+
+        // Save it to DB
+        await arrangeDb.SaveChangesAsync();
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAccountAdminService(actDb);
+
+        var result = await actService.GetAllHandlersAsync();
+
+        // Assert
+        var usernames = result.Select(u => u.Username).ToList();
+
+        Assert.Contains(handlerOneName, usernames);
+        Assert.Contains(handlerTwoName, usernames);
+        Assert.DoesNotContain(customerName, usernames);
+        Assert.DoesNotContain(adminName, usernames);
+    }
+
+    [Fact]
+    public async Task GetAllHandlers_ReturnsNewestFirst()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        var guid = Guid.NewGuid();
+
+        var olderName = $"older-name-{guid}";
+        var newerName = $"newer-name-{guid}";
+
+        // Create two handlers with different create time
+        var users = new List<User>
+        {
+            new()
+            {
+                Username = olderName,
+                PasswordHash = PasswordHashValue,
+                Role = Roles.Handler,
+                CreatedAt = _fixedTime,
+            },
+            new()
+            {
+                Username = newerName,
+                PasswordHash = PasswordHashValue,
+                Role = Roles.Handler,
+                CreatedAt = _fixedTime.AddDays(1),
+            },
+        };
+
+        // Store
+        arrangeDb.Users.AddRange(users);
+
+        // Save it to DB
+        await arrangeDb.SaveChangesAsync();
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAccountAdminService(actDb);
+
+        var result = await actService.GetAllHandlersAsync();
+
+        // Assert
+        var usernames = result.Select(u => u.Username).ToList();
+
+        var newerIndex = usernames.IndexOf(newerName);
+        var olderIndex = usernames.IndexOf(olderName);
+
+        Assert.Contains(newerName, usernames);
+        Assert.Contains(olderName, usernames);
+        Assert.True(newerIndex < olderIndex, "Newer handler should come before older handler.");
     }
 }

@@ -4,6 +4,7 @@ using ClaimsApi.Auth.Tokens;
 using ClaimsApi.Data;
 using ClaimsApi.Models;
 using ClaimsApi.OpenApi;
+using ClaimsApi.Services.Admin;
 using ClaimsApi.Services.Auth;
 using ClaimsApi.Services.Claims;
 using EntityFramework.Exceptions.PostgreSQL;
@@ -30,6 +31,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IClaimService, ClaimService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<IAccountAdminService, AccountAdminService>();
 
 builder.Services.AddSingleton(TimeProvider.System);
 
