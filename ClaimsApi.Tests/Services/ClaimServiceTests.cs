@@ -2,7 +2,7 @@ using ClaimsApi.Auth;
 using ClaimsApi.Data;
 using ClaimsApi.Dtos.Claims;
 using ClaimsApi.Models;
-using ClaimsApi.Services;
+using ClaimsApi.Services.Claims;
 using ClaimsApi.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;

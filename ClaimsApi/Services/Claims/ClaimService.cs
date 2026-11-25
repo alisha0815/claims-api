@@ -5,7 +5,7 @@ using ClaimsApi.Mappings;
 using ClaimsApi.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace ClaimsApi.Services;
+namespace ClaimsApi.Services.Claims;
 
 public class ClaimService(AppDbContext db, TimeProvider timeProvider) : IClaimService
 {
