@@ -1,5 +1,6 @@
 using ClaimsApi.Auth;
 using ClaimsApi.Dtos.Auth;
+using ClaimsApi.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

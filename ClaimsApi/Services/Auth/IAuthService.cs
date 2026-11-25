@@ -1,6 +1,6 @@
 using ClaimsApi.Dtos.Auth;
 
-namespace ClaimsApi.Auth;
+namespace ClaimsApi.Services.Auth;
 
 public interface IAuthService
 {

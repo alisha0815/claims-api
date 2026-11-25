@@ -1,8 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using ClaimsApi.Auth;
+using ClaimsApi.Auth.Tokens;
 using ClaimsApi.Data;
 using ClaimsApi.Dtos.Auth;
 using ClaimsApi.Models;
+using ClaimsApi.Services.Auth;
 using ClaimsApi.Tests.Fixtures;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

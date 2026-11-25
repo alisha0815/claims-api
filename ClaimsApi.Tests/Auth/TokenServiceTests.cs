@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using ClaimsApi.Auth;
+using ClaimsApi.Auth.Tokens;
 using ClaimsApi.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;

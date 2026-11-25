@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ClaimsApi.Auth;
+namespace ClaimsApi.Auth.Tokens;
 
 public class JwtOptions
 {

@@ -1,3 +1,5 @@
+using ClaimsApi.Auth;
+using ClaimsApi.Auth.Tokens;
 using ClaimsApi.Data;
 using ClaimsApi.Dtos.Auth;
 using ClaimsApi.Mappings;
@@ -6,7 +8,7 @@ using EntityFramework.Exceptions.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace ClaimsApi.Auth;
+namespace ClaimsApi.Services.Auth;
 
 public class AuthService(
     AppDbContext db,

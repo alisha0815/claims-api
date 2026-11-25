@@ -1,8 +1,10 @@
 using System.Text;
 using ClaimsApi.Auth;
+using ClaimsApi.Auth.Tokens;
 using ClaimsApi.Data;
 using ClaimsApi.Models;
 using ClaimsApi.OpenApi;
+using ClaimsApi.Services.Auth;
 using ClaimsApi.Services.Claims;
 using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

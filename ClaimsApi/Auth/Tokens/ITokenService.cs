@@ -1,6 +1,6 @@
 using ClaimsApi.Models;
 
-namespace ClaimsApi.Auth;
+namespace ClaimsApi.Auth.Tokens;
 
 public interface ITokenService
 {
