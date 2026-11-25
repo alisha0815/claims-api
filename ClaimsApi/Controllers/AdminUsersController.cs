@@ -1,5 +1,7 @@
 using ClaimsApi.Auth;
+using ClaimsApi.Dtos.Admin;
 using ClaimsApi.Dtos.Auth;
+using ClaimsApi.Services.Admin;
 using ClaimsApi.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +11,8 @@ namespace ClaimsApi.Controllers;
 [ApiController]
 [Route("api/admin")]
 [Authorize(Roles = Roles.Admin)]
-public class AdminUsersController(IAuthService authService) : ControllerBase
+public class AdminUsersController(IAuthService authService, IAccountAdminService adminService)
+    : ControllerBase
 {
     [HttpPost("users")]
     [ProducesResponseType<RegisterResponse>(StatusCodes.Status201Created)]
@@ -33,5 +36,18 @@ public class AdminUsersController(IAuthService authService) : ControllerBase
         }
 
         return StatusCode(StatusCodes.Status201Created, registerResponse.Response);
+    }
+
+    [HttpGet("users")]
+    [ProducesResponseType<IReadOnlyList<HandlerResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<IReadOnlyList<HandlerResponse>>> GetAllHandlers(
+        CancellationToken cancellationToken
+    )
+    {
+        var handlers = await adminService.GetAllHandlersAsync(cancellationToken);
+
+        return Ok(handlers);
     }
 }

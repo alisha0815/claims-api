@@ -87,6 +87,16 @@ Content-Type: application/json
   "password": "bob-password"
 }
 
+### Login as handler (200)
+# @name loginHandler
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "handler-one",
+  "password": "handler-password"
+}
+
 ### Refresh
 POST {{baseUrl}}/api/auth/refresh
 Content-Type: application/json
@@ -359,16 +369,6 @@ Content-Type: application/json
   "password": "handler-password"
 }
 
-### Login as handler (200)
-# @name loginHandler
-POST {{baseUrl}}/api/auth/login
-Content-Type: application/json
-
-{
-  "username": "handler-one",
-  "password": "handler-password"
-}
-
 ### Get all claims - handler sees all claims (200)
 GET {{baseUrl}}/api/claims
 Authorization: Bearer {{handlerToken}}
@@ -376,3 +376,18 @@ Authorization: Bearer {{handlerToken}}
 ### Get claim by Id - handler reads another customer´s claim (200)
 GET {{baseUrl}}/api/claims/{{createClaim.response.body.$.id}}
 Authorization: Bearer {{handlerToken}}
+
+### Get all handlers - by admin (200)
+GET {{baseUrl}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+
+### Get all handlers -by customer (403)
+GET {{baseUrl}}/api/admin/users
+Authorization: Bearer {{token}}
+
+### Get all handlers - by handler (403)
+GET {{baseUrl}}/api/admin/users
+Authorization: Bearer {{handlerToken}}
+
+### Get all handlers -no token (401)
+GET {{baseUrl}}/api/admin/users
