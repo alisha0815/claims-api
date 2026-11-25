@@ -518,4 +518,57 @@ public class AuthServiceTests(PostgresFixture fixture) : IClassFixture<PostgresF
         Assert.DoesNotContain(customerName, usernames);
         Assert.DoesNotContain(adminName, usernames);
     }
+
+    [Fact]
+    public async Task GetAllHandlers_ReturnsNewestFirst()
+    {
+        // Arrange
+        await using var arrangeDb = fixture.CreateDbContext();
+
+        var guid = Guid.NewGuid();
+
+        var olderName = $"older-name-{guid}";
+        var newerName = $"newer-name-{guid}";
+
+        // Create two handlers with different create time
+        var users = new List<User>
+        {
+            new()
+            {
+                Username = olderName,
+                PasswordHash = PasswordHashValue,
+                Role = Roles.Handler,
+                CreatedAt = _fixedTime,
+            },
+            new()
+            {
+                Username = newerName,
+                PasswordHash = PasswordHashValue,
+                Role = Roles.Handler,
+                CreatedAt = _fixedTime.AddDays(1),
+            },
+        };
+
+        // Store
+        arrangeDb.Users.AddRange(users);
+
+        // Save it to DB
+        await arrangeDb.SaveChangesAsync();
+
+        // Act
+        await using var actDb = fixture.CreateDbContext();
+        var actService = CreateAccountAdminService(actDb);
+
+        var result = await actService.GetAllHandlersAsync();
+
+        // Assert
+        var usernames = result.Select(u => u.Username).ToList();
+
+        var newerIndex = usernames.IndexOf(newerName);
+        var olderIndex = usernames.IndexOf(olderName);
+
+        Assert.Contains(newerName, usernames);
+        Assert.Contains(olderName, usernames);
+        Assert.True(newerIndex < olderIndex, "Newer handler should come before older handler.");
+    }
 }
