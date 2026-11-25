@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using ClaimsApi.Validation;
 
-namespace ClaimsApi.Dtos;
+namespace ClaimsApi.Dtos.Claims;
 
-public record UpdateClaimRequest(
+public record CreateClaimRequest(
+    [Required, MaxLength(50)] string PolicyNumber,
     [Required, MaxLength(100)] string Title,
     [Required, NotInFuture] DateOnly? IncidentDate,
     [Range(0, double.MaxValue, MinimumIsExclusive = true)] decimal Amount,

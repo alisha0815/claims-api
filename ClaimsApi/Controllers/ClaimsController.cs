@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using ClaimsApi.Auth;
-using ClaimsApi.Dtos;
+using ClaimsApi.Dtos.Claims;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
 using Microsoft.AspNetCore.Authorization;

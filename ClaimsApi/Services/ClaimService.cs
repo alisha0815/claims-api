@@ -1,6 +1,6 @@
 using System.IO.Compression;
 using ClaimsApi.Data;
-using ClaimsApi.Dtos;
+using ClaimsApi.Dtos.Claims;
 using ClaimsApi.Mappings;
 using ClaimsApi.Models;
 using Microsoft.EntityFrameworkCore;

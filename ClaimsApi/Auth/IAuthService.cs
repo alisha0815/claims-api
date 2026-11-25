@@ -1,4 +1,4 @@
-using ClaimsApi.Dtos;
+using ClaimsApi.Dtos.Auth;
 
 namespace ClaimsApi.Auth;
 

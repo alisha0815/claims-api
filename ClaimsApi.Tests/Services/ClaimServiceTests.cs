@@ -1,6 +1,6 @@
 using ClaimsApi.Auth;
 using ClaimsApi.Data;
-using ClaimsApi.Dtos;
+using ClaimsApi.Dtos.Claims;
 using ClaimsApi.Models;
 using ClaimsApi.Services;
 using ClaimsApi.Tests.Fixtures;
