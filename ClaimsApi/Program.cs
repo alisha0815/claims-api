@@ -24,6 +24,18 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AddProblemDetails();
 
+const string FrontendCorsPolicy = "Frontend";
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        FrontendCorsPolicy,
+        policy => policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()
+    );
+});
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("ClaimsDb")).UseExceptionProcessor()
 );
@@ -91,6 +103,8 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/openapi/v1.json", "Claims API v1");
     options.EnablePersistAuthorization();
 });
+
+app.UseCors(FrontendCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
